@@ -4,7 +4,7 @@ import { nodeToElement } from "$/helpers/nodeToElement";
 
 interface ForProps<T, U extends ReactNode> {
   /** Array to iterate over */
-  each: ReadonlyArray<T> | null | undefined;
+  each: ReadonlyArray<T> | undefined | null;
   /** RenderProp for children generation
    * OR a static element displayed each.length times */
   children: ReactNode | ((item: T, idx: number) => U);

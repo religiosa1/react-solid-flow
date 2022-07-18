@@ -1,9 +1,9 @@
-# Basic flow react components
+# react-control-flow
 
 [SolidJS](https://www.solidjs.com/docs/latest/api#control-flow)-inspired
-basic control-flow components and everyday hooks library.
+basic control-flow components and everyday async state hook library.
 
-Also your common everyday needs, such as Portals, ErrorBoundaries, conditional
+It also fufills everyday needs, like Portals, ErrorBoundaries, conditional
 display, iteration, async helpers etc.
 
 - typescript support
@@ -30,7 +30,7 @@ npm install react-solid-flow
 
 ```tsx
 function For<T, U extends ReactNode>(props: {
-  each: ReadonlyArray<T> | null | undefined;
+  each: ReadonlyArray<T> | undefined | null;
   children: ReactNode | ((item: T, idx: number) => U);
   fallback?: ReactNode;
 }): ReactElement | null;
@@ -42,9 +42,9 @@ function For<T, U extends ReactNode>(props: {
 
 Rendering a collection of items from _each_ prop. If _each_ isn't an array
 or has zero length, display optional _fallback_. _children_ can be either a
-random prop (more useful) or a static element. If a child is missing a key
-property, than it's added automatically (using its array index).
-Any nullish child is ommited. If every child is ommited, fallback is shown.
+render prop function (more useful) or a static element. If a child is missing
+a key prop, then it's added automatically (using its array index).
+Any nullish child is ommited. If every child is ommited, _fallback_ is shown.
 
 #### Show
 
@@ -58,7 +58,6 @@ function Show<T>(props: {
 <Show when={parentSeen() === 'mom'} fallback={<h3>nevermind...</h3>}>
   <h2>Hi mom!</h2>
 </Show>
-
 ```
 
 Conditionally render, depending on truthiness of _when_ props, either _children_
@@ -77,11 +76,12 @@ function Match<T>(props: {
   children?: ReactNode | ((item: T) => ReactNode);
 }): ReactElement | null;
 ```
-Switch-case alike, render one of mutually exclusive conditions (described in
+Switch-case alike, renders one of mutually exclusive conditions (described in
 'when' prop of Match component) of a switch.
 
 Match should be a direct descendant of Switch and only the first
 Match with truthy _when_ is rendered.
+Optional _fallback_ is shown, if no Match has a truthy _when_
 
 #### ErrorBoundary
 
@@ -105,8 +105,10 @@ class ErrorBoundary extends Component<{
 </ErrorBoundary>
 ```
 
-General error boundary, catching synchronous error in renders and displays fallback content
-in that case. Also supports callback form which passes in error and a reset function.
+General error boundary, catches synchronous errors in renders and displays _fallback_ content
+in that case. Also supports render prop function as _fallback_ which recieves the occured
+error and a reset function, which clears the occured error and performs a rerender
+of children content after that.
 
 #### Dynamic
 
@@ -125,11 +127,10 @@ function Dynamic<T>({
 <Dynamic component={isLink ? "a" : "span"} {...someProps}>
   Maybe click me
 </Dynamic>
-
 ```
 
 This component lets you insert an arbitrary Component or tag and passes
-the props through to it.
+its props to it (omitting component prop).
 
 #### Portal
 
@@ -144,12 +145,12 @@ function Portal(props: {
     Hi Mom!
   </dialog>
 </Portal>
-
 ```
-Component for rendering children outside of the Component Hierarchy root node.
+Component for rendering children outside of the component hierarchy root node.
 React events still go as usual. _mount_ can be either a native node, or a
 querySelector for such a node.
-_useShadow_ places the element in a Shadow Root for style isolation
+If no node is provided renders nothing.
+<!-- _useShadow_ places the element in Shadow Root for style isolation -->
 
 ### Hooks
 
@@ -184,8 +185,8 @@ function useResource<T, TContext = never>(
 Turning a promise into async state / resource and enabling its usage inside of
 Suspense.
 
-If initial value or set argument isn't a promise, it's resolved imidietly, and
-promise field contains fake immediately resolved promise (for consistency) and
+If initial value or set argument isn't a promise, it's resolved immediately, and
+promise field contains a fake immediately resolved promise (for consistency) and
 loading immediately set no false.
 
 After call to set(), previous result or error are reset to null.
@@ -257,6 +258,5 @@ const Employee = ({ employeeId }) => {
 </Suspense>
 ```
 
-## License and stuff
-### License
+## License
 react-control-flow is MIT licensed.
