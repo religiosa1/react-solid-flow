@@ -7,7 +7,7 @@ Also your common everyday needs, such as Portals, ErrorBoundaries, conditional
 display, iteration, async helpers etc.
 
 - typescript support
-- lightweight (10kB) with zero 3d party dependencies, except react
+- lightweight, zero 3d party dependencies, except react
 - modern: react 17+, no legacy APIs, HOCs or weird hacks
 - fully tested
 - easy to use
@@ -256,3 +256,7 @@ const Employee = ({ employeeId }) => {
   <Employee employeeId={100500} />
 </Suspense>
 ```
+
+## License and stuff
+### License
+react-control-flow is MIT licensed.
