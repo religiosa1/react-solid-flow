@@ -1,17 +1,17 @@
 import { nodeToElement } from "$/helpers/nodeToElement";
-import { ReactNode, useContext, useEffect, useRef } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 interface MatchProps<T> {
   when: T | undefined | null | false;
   children?: ReactNode | ((item: T) => ReactNode);
 }
 
-export function Match<T>({ when, ...props }: MatchProps<T>) {
+export function Match<T>({ when, children }: MatchProps<T>): ReactElement | null {
   if (!when) {
     return null;
   }
-  if (props.children instanceof Function) {
-    return nodeToElement(props.children(when));
+  if (children instanceof Function) {
+    return nodeToElement(children(when));
   }
-  return nodeToElement(props.children);
+  return nodeToElement(children);
 }

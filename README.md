@@ -65,9 +65,22 @@ Conditionally render, depending on truthiness of _when_ props, either _children_
 or (optionally) _fallback_
 
 #### Switch / Match
-TODO
 
-As in SolidJS: Match should be a direct descendant of Switch and only the first
+```tsx
+function Switch(props: {
+  children: ReactNode;
+  fallback?: ReactNode;
+}): ReactElement | null;
+
+function Match<T>(props: {
+  when: T | undefined | null | false;
+  children?: ReactNode | ((item: T) => ReactNode);
+}): ReactElement | null;
+```
+Switch-case alike, render one of mutually exclusive conditions (described in
+'when' prop of Match component) of a switch.
+
+Match should be a direct descendant of Switch and only the first
 Match with truthy _when_ is rendered.
 
 #### ErrorBoundary
@@ -145,7 +158,6 @@ Helpers for async state /suspenses.
 #### useResource
 
 ```ts
-
 interface AsyncState<T> {
   loading: boolean;
   error: unknown | null;
@@ -182,7 +194,7 @@ For use in Suspense, access data through the read method inside render (make sur
 not to call it before any of hook calls in the component).
 
 
-``` tsx
+```tsx
 const Comp = () => {
   const resource = useResource(fetch("/api/v1/employees"));
   ...
