@@ -91,4 +91,41 @@ describe("useRequest", () => {
     expect(fn).toBeCalled();
     expect(fn).toBeCalledWith(1, expect.anything());
   });
+
+  it("read() throws promise when loading", () => {
+		const prms = new Promise(() => {});
+		const { result } = renderHook(() => useRequest(() => prms, []));
+		let item;
+		try {
+			result.current.read();
+		} catch(e) {
+			item = e;
+		}
+		expect(item).toBe(prms);
+	});
+
+	it("read() throws error when error occured", async () => {
+		let reject: (value: string) => void;
+		const prms = new Promise((_, rej) => { reject = rej });
+		const { result } = renderHook(() => useRequest(() => prms, []));
+		await act(async () => {
+			reject("test error");
+			await prms.catch(() => {});
+		});
+		expect(result.current.loading).toBe(false);
+		expect(() => result.current.read()).toThrow("test error");
+	});
+
+	it("read() returns value, when everything is ok", async () => {
+		let resolve: (value: boolean) => void;
+		const prms = new Promise((res) => { resolve = res });
+		const { result } = renderHook(() => useRequest(() => prms, []));
+		await act(async () => {
+			resolve!(true);
+			await prms;
+		});
+
+		const val = result.current.read();
+		expect(val).toBe(true);
+	});
 });

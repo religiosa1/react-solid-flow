@@ -4,8 +4,6 @@ import { useAsyncStateReducer, AsyncState } from "./useAsyncStateReducer";
 export type UseAsyncStateReturn<T> = AsyncState<T> & {
   /** setting async state to the next value */
   set: (val: Promise<T> | Awaited<T>) => void;
-  /** getter for using state inside of a suspense */
-  read: () => Awaited<T>;
 }
 
 interface UseAsyncStateOpts<T, TContext> {
@@ -54,16 +52,6 @@ export function useAsyncState<T, TContext = never>(
     asynHandler(val);
   }, [ asynHandler ]);
 
-  const read = useCallback(() => {
-    if (state.loading) {
-      throw state.promise;
-    }
-    if (state.error) {
-      throw state.error;
-    }
-    return state.result!;
-  }, [ state ]);
-
   useEffect(() => {
     // state intentionally ommited from deps, as it's for initial value only
     lastPrms.current = state.promise; // explicitly set on mount for react 18
@@ -77,6 +65,5 @@ export function useAsyncState<T, TContext = never>(
   return useMemo(() => ({
     ...state,
     set,
-    read,
-  }), [ state, set, read ]);
+  }), [ state, set ]);
 }

@@ -12,7 +12,7 @@ display, Portals, ErrorBoundaries, async helpers etc.
 - modern: react 16.8+, no legacy APIs or weird hacks
 - fully tested
 - easy to use
-- general async state / query
+- general async state / query with optional Suspense support
 - mostly SolidJs compatible interface (where it makes sense in the react context)
 - covers common pitfalls (missed keys in maps, primitives as childrens etc.)
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
@@ -202,9 +202,9 @@ const resource = useAsyncState(fetch("/api/v1/employees"));
 const resource = useAsyncState(() => fetch("/api/v1/employees"));
 ```
 
-Generally, this hook is better suited for one-of promise wraps, if you
-need to perform some potentially repeated calls, or you have deps to your
-getter function, you should see _useRequest_ hook bellow.
+Generally, this hook is better suited for one-of promise wraps and small stuff,
+if you need to perform some potentially repeated calls, or you have deps to your
+getter function, or you want to use Suspense you should see _useRequest_ hook bellow.
 
 After a call to set() method, previous result and error are reset to null.
 
@@ -220,28 +220,6 @@ return (
     <FooComponent data={resource.result} />
   )
 );
-```
-
-read() is a helper method enabling usage of async state inside of a Suspense.
-You _can't_ have useAsyncState itself in the suspended component, as it will
-result in endless refetches/updates, cause it will recreate its state every
-time in this case.
-
-```tsx
-const SuspendedComp = () => {
-  return (
-    <div>{resource.read()}</div>
-  )
-};
-
-const ParentComp = () => {
-  const resource = useAsyncState(() => fetch("/api/v1/employees"));
-  return (
-    <Suspense fallback="loading...">
-      <Comp />
-    </Suspense>
-  );
-};
 ```
 
 #### useRequest
@@ -276,6 +254,9 @@ the specified dependencies, async function also recieves an abort signal, called
 on consequetive reruns (or manually) for cancellation of previous request.
 _asyncFunction_ can pass it down to fetch, axios or whatever to abort the query.
 
+You can optionally use it inside of Suspense. For that call _read()_ method
+inside of the render portion of your component (bellow any other hooks calls)
+
 ```tsx
 const Employee = ({ employeeId }) => {
   const resource = useRequest(
@@ -283,8 +264,14 @@ const Employee = ({ employeeId }) => {
     [ employeeId ]
   );
 
-  ...
+  return (
+    <div className="employee">{resource.read()?.data.name}</div>
+  )
 };
+
+<Suspense fallback="Loading...">
+  <Employee>
+</Suspense>
 ```
 
 ## Contributing
