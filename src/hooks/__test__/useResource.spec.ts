@@ -114,6 +114,15 @@ describe("useResource", () => {
 		expect(result.current.result).toBe(true);
 	});
 
+	it("Change of initial value doesn't trigger rerender", async () => {
+		const { result, rerender } = renderHook((val: number) => useResource(Promise.resolve(val)), {
+			initialProps: 1
+		});
+		await waitFor(() => expect(result.current.result).toBe(1));
+		await act(() => { rerender(2) });
+		expect(result.current.result).toBe(1);
+	});
+
 	it("Allows to pass initial value as a regular sync value", async () => {
 		const { result } = renderHook(() => useResource(true));
 		expect(result.current.loading).toBe(false);

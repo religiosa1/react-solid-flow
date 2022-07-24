@@ -1,5 +1,7 @@
 import { Reducer, useReducer } from "react";
 
+export type AsyncStateInit<T> = Promise<T> | Awaited<T> | (() => Promise<T> | Awaited<T>);
+
 export interface AsyncState<T> {
   /** Pending state */
   loading: boolean;
@@ -11,28 +13,38 @@ export interface AsyncState<T> {
   promise: Promise<T> | null;
 }
 
-export function useAsyncState<T>(initialValue?: Promise<T> | Awaited<T>) {
-  const initialState: AsyncState<T> = initialValue === undefined ? ({
-    loading: false,
-    error: null,
-    result: null,
-    promise: null,
-  }) : initialValue instanceof Promise ? ({
-    loading: true,
-    error: null,
-    result: null,
-    promise: initialValue,
-  }) : ({
+export function useAsyncState<T>(initialValue?: AsyncStateInit<T>) {
+  return useReducer(
+    asyncStateReducer as Reducer<AsyncState<T>, Action<T>>,
+    initialValue,
+    asyncStateInitializer
+  );
+}
+
+function asyncStateInitializer<T>(init?: AsyncStateInit<T>): AsyncState<T> {
+  const initialValue = init instanceof Function ? init() : init;
+  if (initialValue === undefined) {
+    return {
+      loading: false,
+      error: null,
+      result: null,
+      promise: null,
+    };
+  }
+  if (initialValue instanceof Promise) {
+    return {
+      loading: true,
+      error: null,
+      result: null,
+      promise: initialValue,
+    };
+  }
+  return {
     loading: false,
     error: null,
     result: initialValue,
     promise: Promise.resolve(initialValue),
-  });
-
-  return useReducer(
-    asyncStateReducer as Reducer<AsyncState<T>, Action<T>>,
-    initialState
-  );
+  };
 }
 
 type Action<T> = {
