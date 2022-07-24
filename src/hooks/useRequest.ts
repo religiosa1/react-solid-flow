@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useResource, UseResourceReturn } from "./useResource";
+import { useAsyncState, UseAsyncStateReturn } from "./useAsyncState";
 
 export interface UseRequestCbOpts {
   signal: AbortSignal;
@@ -18,7 +18,7 @@ interface UseRequestOpts<T, Args extends readonly any[]> {
   onError?: (error: unknown, context: Args) => void;
 }
 
-type UseAsyncRequestReturn<T, Args extends readonly any[]> = UseResourceReturn<T> & {
+type UseRequestReturn<T, Args extends readonly any[]> = UseAsyncStateReturn<T> & {
   execute: (...args: Args) => void;
 };
 
@@ -41,11 +41,11 @@ export function useRequest<T, Args extends readonly any[]>(
     onCompleted,
     onError,
   }: UseRequestOpts<T, Args> = {},
-): UseAsyncRequestReturn<T, Args> {
+): UseRequestReturn<T, Args> {
   const controller = useRef<AbortController>();
   const firstRun = useRef<boolean>(skipFirstRun);
 
-  const asyncState = useResource<T, Args>(initialValue, {
+  const asyncState = useAsyncState<T, Args>(initialValue, {
     onCompleted,
     onError,
     context: params

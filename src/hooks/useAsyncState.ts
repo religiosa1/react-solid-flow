@@ -1,97 +1,82 @@
-import { Reducer, useReducer } from "react";
+import { useCallback, useEffect, useRef, useMemo } from "react";
+import { useAsyncStateReducer, AsyncState } from "./useAsyncStateReducer";
 
-export type AsyncStateInit<T> = Promise<T> | Awaited<T> | (() => Promise<T> | Awaited<T>);
-
-export interface AsyncState<T> {
-  /** Pending state */
-  loading: boolean;
-  /** Contains error, if async state rejected */
-  error: unknown | null;
-  /** Contains result, if async state succesfully resolved */
-  result: Awaited<T> | null;
-  /** Original promise */
-  promise: Promise<T> | null;
+export type UseAsyncStateReturn<T> = AsyncState<T> & {
+  /** setting async state to the next value */
+  set: (val: Promise<T> | Awaited<T>) => void;
+  /** getter for using state inside of a suspense */
+  read: () => Awaited<T>;
 }
 
-export function useAsyncState<T>(initialValue?: AsyncStateInit<T>) {
-  return useReducer(
-    asyncStateReducer as Reducer<AsyncState<T>, Action<T>>,
-    initialValue,
-    asyncStateInitializer
-  );
+interface UseAsyncStateOpts<T, TContext> {
+  /** resolve callback */
+  onCompleted?: (data: Awaited<T>, context: TContext) => void;
+  /** rejection callback */
+  onError?: (error: unknown, context: TContext) => void;
+  /** arbitrary data, passed to callbacks, capturing context at the moment in which resource was set */
+  context?: TContext
 }
 
-function asyncStateInitializer<T>(init?: AsyncStateInit<T>): AsyncState<T> {
-  const initialValue = init instanceof Function ? init() : init;
-  if (initialValue === undefined) {
-    return {
-      loading: false,
-      error: null,
-      result: null,
-      promise: null,
-    };
-  }
-  if (initialValue instanceof Promise) {
-    return {
-      loading: true,
-      error: null,
-      result: null,
-      promise: initialValue,
-    };
-  }
-  return {
-    loading: false,
-    error: null,
-    result: initialValue,
-    promise: Promise.resolve(initialValue),
-  };
-}
+export function useAsyncState<T, TContext = never>(
+  initialValue?: (() => Promise<T> | Awaited<T>) | Promise<T> | Awaited<T>,
+  {
+    onCompleted,
+    onError,
+    context
+  }: UseAsyncStateOpts<T, TContext> = {}
+): UseAsyncStateReturn<T> {
+  const [ state, dispatch ] = useAsyncStateReducer<T>(initialValue);
+  // We're keeping the last set promise for race conditions checks
+  const lastPrms = useRef<Promise<T> | null>(state.promise);
 
-type Action<T> = {
-  type: "LOADING";
-  payload: Promise<T>;
-} | {
-  type: "ERROR";
-  payload?: unknown;
-} | {
-  type: "RESULT";
-  payload: Awaited<T>;
-} | {
-  type: "SYNC-RESULT";
-  payload: Awaited<T>;
-}
+  const asynHandler = useCallback(async (val: Promise<T>) => {
+    try {
+      const data = await val;
+      // Checking that we don't have a newer promise -- race condition
+      if (lastPrms.current === val) {
+        dispatch({ type: "RESULT", payload: data });
+        onCompleted?.(data, context!);
+      }
+    } catch (err) {
+      if (lastPrms.current === val) {
+        dispatch({ type: "ERROR", payload: err });
+        onError?.(err, context!);
+      }
+    }
+  }, [ dispatch, onCompleted, onError, context ]);
 
-export function asyncStateReducer<T>(state: AsyncState<T>, action: Action<T>): AsyncState<T> {
-  switch (action.type) {
-  case "LOADING":
-    return {
-      loading: true,
-      result: null,
-      error: null,
-      promise: action.payload,
-    };
-  case "ERROR":
-    return {
-      ...state,
-      loading: false,
-      result: null,
-      error: action.payload,
-    };
-  case "RESULT":
-    return {
-      ...state,
-      loading: false,
-      result: action.payload,
-      error: null,
-    };
-  case "SYNC-RESULT":
-    return {
-      loading: false,
-      result: action.payload,
-      error: null,
-      promise: Promise.resolve(action.payload),
-    };
-  default:
-    return state;
-  }
+  const set = useCallback((val: Promise<T> | Awaited<T>) => {
+    if (!(val instanceof Promise)) {
+      return dispatch({ type: "SYNC-RESULT", payload: val })
+    }
+    lastPrms.current = val;
+    dispatch({ type: "LOADING", payload: val });
+    asynHandler(val);
+  }, [ asynHandler ]);
+
+  const read = useCallback(() => {
+    if (state.loading) {
+      throw state.promise;
+    }
+    if (state.error) {
+      throw state.error;
+    }
+    return state.result!;
+  }, [ state ]);
+
+  useEffect(() => {
+    // state intentionally ommited from deps, as it's for initial value only
+    lastPrms.current = state.promise; // explicitly set on mount for react 18
+    if (state.loading && state.promise instanceof Promise) {
+      asynHandler(state.promise);
+    }
+    // On unmount we clear it away, to avoid modifying state of unmounted component
+    return () => { lastPrms.current = null };
+  }, []);
+
+  return useMemo(() => ({
+    ...state,
+    set,
+    read,
+  }), [ state, set, read ]);
 }

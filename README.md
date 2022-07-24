@@ -1,17 +1,18 @@
 # react-control-flow
 
 [SolidJS](https://www.solidjs.com/docs/latest/api#control-flow)-inspired
-basic control-flow components and everyday async state hook library.
+basic control-flow components and everyday async state hook library for
+[React](https://reactjs.org/)
 
-It also fufills everyday needs, like Portals, ErrorBoundaries, conditional
-display, iteration, async helpers etc.
+It fulfills everyday needs: iteration, conditional
+display, Portals, ErrorBoundaries, async helpers etc.
 
 - typescript support
 - lightweight, zero 3d party dependencies, except react
-- modern: react 17+, no legacy APIs, HOCs or weird hacks
+- modern: react 16.8+, no legacy APIs or weird hacks
 - fully tested
 - easy to use
-- your everyday general async helpers with optional Suspense support
+- general async state / query
 - mostly SolidJs compatible interface (where it makes sense in the react context)
 - covers common pitfalls (missed keys in maps, primitives as childrens etc.)
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
@@ -154,9 +155,9 @@ If no node is provided renders nothing.
 
 ### Hooks
 
-Helpers for async state /suspenses.
+Helpers for async state / suspenses.
 
-#### useResource
+#### useAsyncState
 
 ```ts
 interface AsyncState<T> {
@@ -166,8 +167,8 @@ interface AsyncState<T> {
   promise: Promise<T> | null;
 }
 
-function useResource<T, TContext = never>(
-  initialValue?: Promise<T> | Awaited<T>,
+function useAsyncState<T, TContext = never>(
+  initialValue?: (() => Promise<T> | Awaited<T>) | Promise<T> | Awaited<T>,
   opts?: {
     onCompleted?: (data: Awaited<T>, context: TContext) => void;
     onError?: (error: unknown, context: TContext) => void;
@@ -178,36 +179,69 @@ function useResource<T, TContext = never>(
   /** setting async state to the next value */
   set: (val: Promise<T> | Awaited<T>) => void;
   /** getter for using state inside of a suspense */
-  read: () => Awaited<T> | null;
+  read: () => Awaited<T>;
 };
 ```
 
-Turning a promise into async state / resource and enabling its usage inside of
-Suspense.
+Turning a promise into AsyncState, exposing common async data: loading, result
+and error. It also prevents updates on unmounted components and race conditions.
 
-If initial value or set argument isn't a promise, it's resolved immediately, and
-promise field contains a fake immediately resolved promise (for consistency) and
-loading immediately set no false.
+If initial value or set() argument isn't a promise, it's resolved immediately,
+and promise field contains a fake immediately resolved promise (for consistency)
+and loading immediately set to false.
 
-After call to set(), previous result or error are reset to null.
+As with useState, if _initialValue_ is a function, it's treated as a defered
+initialization. It's called only once on the first render and its result is used
+as the initial value. You should us that to avoid refetching something on every
+render
 
-For use in Suspense, access data through the read method inside render (make sure
-not to call it before any of hook calls in the component).
+```ts
+// DON'T DO THAT
+const resource = useAsyncState(fetch("/api/v1/employees"));
+// DO THAT INSTEAD -- wrap it into a funtion
+const resource = useAsyncState(() => fetch("/api/v1/employees"));
+```
 
+Generally, this hook is better suited for one-of promise wraps, if you
+need to perform some potentially repeated calls, or you have deps to your
+getter function, you should see _useRequest_ hook bellow.
+
+After a call to set() method, previous result and error are reset to null.
 
 ```tsx
-const Comp = () => {
-  const resource = useResource(fetch("/api/v1/employees"));
-  ...
+const resource = useAsyncState(somePromise);
+
+return (
+  resource.loading ? (
+    <Preloader />
+  ) : resource.error ? (
+    <ErrorMessage error={resource.error} />
+  ) : (
+    <FooComponent data={resource.result} />
+  )
+);
+```
+
+read() is a helper method enabling usage of async state inside of a Suspense.
+You _can't_ have useAsyncState itself in the suspended component, as it will
+result in endless refetches/updates, cause it will recreate its state every
+time in this case.
+
+```tsx
+const SuspendedComp = () => {
   return (
     <div>{resource.read()}</div>
   )
 };
 
-
-<Suspense fallback="loading...">
-  <Comp />
-</Suspense>
+const ParentComp = () => {
+  const resource = useAsyncState(() => fetch("/api/v1/employees"));
+  return (
+    <Suspense fallback="loading...">
+      <Comp />
+    </Suspense>
+  );
+};
 ```
 
 #### useRequest
@@ -236,10 +270,11 @@ function useRequest<T, Args extends readonly any[]>(
 };
 ```
 
-Extension of useResource, tying an asyncFunction serving as a getter, to be run
-every time, when it's dependencies change (passing those dependencies as its
-arguments). Besides dependencies, async function also recieves an abort signal,
-which will trigger onAbort, with each rerun (so you can drop a current request).
+Tying async state to a memoized _asyncFunction_, calling it every time its
+dependencies change. Dependencies passed to _asyncFunction_ as arguments. Besides
+the specified dependencies, async function also recieves an abort signal, called
+on consequetive reruns (or manually) for cancellation of previous request.
+_asyncFunction_ can pass it down to fetch, axios or whatever to abort the query.
 
 ```tsx
 const Employee = ({ employeeId }) => {
@@ -248,15 +283,13 @@ const Employee = ({ employeeId }) => {
     [ employeeId ]
   );
 
-  return  (
-    <div>{resource.read()}</div>
-  );
-}
-
-<Suspense fallback="loading...">
-  <Employee employeeId={100500} />
-</Suspense>
+  ...
+};
 ```
+
+## Contributing
+If you have any ideas or suggestions or want to report a bug, feel free to
+write in the issues section or create a PR.
 
 ## License
 react-control-flow is MIT licensed.

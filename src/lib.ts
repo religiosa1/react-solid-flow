@@ -6,8 +6,8 @@ export { ErrorBoundary } from "./components/ErrorBoundary";
 export { Dynamic } from "./components/Dynamic";
 export { Portal } from "./components/Portal";
 
-export type { AsyncState } from "./hooks/useAsyncState";
+export type { AsyncState } from "./hooks/useAsyncStateReducer";
 export { useRequest } from "./hooks/useRequest";
 export type { UseRequestCbOpts } from "./hooks/useRequest";
-export { useResource } from "./hooks/useResource";
-export type { UseResourceReturn } from "./hooks/useResource";
+export { useAsyncState } from "./hooks/useAsyncState";
+export type { UseAsyncStateReturn } from "./hooks/useAsyncState";
