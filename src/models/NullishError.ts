@@ -1,0 +1,1 @@
+export class NullishError extends Error {}

@@ -1,17 +1,8 @@
 import { Reducer, useReducer } from "react";
+import { AsyncState } from "../models/AsyncState";
+import { NullishError } from "../models/NullishError";
 
 type AsyncStateInit<T> = (() => Promise<T> | Awaited<T>) | Promise<T> | Awaited<T>;
-
-export interface AsyncState<T> {
-  /** Pending state */
-  loading: boolean;
-  /** Contains error, if async state rejected */
-  error: unknown | null;
-  /** Contains result, if async state succesfully resolved */
-  result: Awaited<T> | null;
-  /** Original promise */
-  promise: Promise<T> | null;
-}
 
 export function useAsyncStateReducer<T>(
   initialValue?: AsyncStateInit<T>
@@ -74,17 +65,17 @@ export function asyncStateReducer<T>(state: AsyncState<T>, action: Action<T>): A
     };
   case "ERROR":
     return {
-      ...state,
       loading: false,
       result: null,
-      error: action.payload,
+      error: action.payload != null ? action.payload : new NullishError(),
+      promise: state.promise instanceof Promise ? state.promise : Promise.reject(action.payload),
     };
   case "RESULT":
     return {
-      ...state,
       loading: false,
       result: action.payload,
       error: null,
+      promise: state.promise instanceof Promise ? state.promise : Promise.resolve(action.payload),
     };
   case "SYNC-RESULT":
     return {

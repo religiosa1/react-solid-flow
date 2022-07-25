@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { nodeToElement } from "../nodeToElement";
 import { isValidElement } from "react";
+import { nodeToElement } from "../nodeToElement";
 
 describe("nodeToElement helper", () => {
   it("returns null on nullish input", () => {

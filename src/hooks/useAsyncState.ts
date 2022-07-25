@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo } from "react";
-import { useAsyncStateReducer, AsyncState } from "./useAsyncStateReducer";
+import { useAsyncStateReducer } from "./useAsyncStateReducer";
+import { AsyncState } from "../models/AsyncState";
 
 export type UseAsyncStateReturn<T> = AsyncState<T> & {
   /** setting async state to the next value */

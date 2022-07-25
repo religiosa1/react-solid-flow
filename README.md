@@ -153,6 +153,41 @@ querySelector for such a node.
 If no node is provided renders nothing.
 <!-- _useShadow_ places the element in Shadow Root for style isolation -->
 
+
+#### Await
+
+```ts
+interface AsyncState<T> {
+  loading: boolean;
+  error: unknown | null;
+  result: Awaited<T> | null;
+  promise: Promise<T> | null;
+}
+
+function Await<T>(props: {
+  for: AsyncState<T>;
+  fallback?: (() => ReactNode) | ReactNode;
+  catch?: ((err: unknown) => ReactNode) | ReactNode;
+  children?: ((data: Awaited<T>) => ReactNode) | ReactNode;
+}): ReactElement | null;
+```
+
+Component for displaying AsyncState (as returned by useAsyncState or useRequest).
+
+```tsx
+const resource = useRequest(() => fetch(`/api/v1/employees`), []);
+// or
+const resource = useAsyncState(Promise.resolve("Hi mom!"));
+
+<Await
+  for={resource}
+  fallback="loading..."
+  catch={(err) => <div>Error: {String(err)}</div>}
+>
+  {(data) => <div>Resolved data: {data}</div>}
+</Await>
+```
+
 ### Hooks
 
 Helpers for async state / suspenses.
@@ -178,8 +213,6 @@ function useAsyncState<T, TContext = never>(
 ): AsyncState<T> & {
   /** setting async state to the next value */
   set: (val: Promise<T> | Awaited<T>) => void;
-  /** getter for using state inside of a suspense */
-  read: () => Awaited<T>;
 };
 ```
 
@@ -193,7 +226,7 @@ and loading immediately set to false.
 As with useState, if _initialValue_ is a function, it's treated as a defered
 initialization. It's called only once on the first render and its result is used
 as the initial value. You should us that to avoid refetching something on every
-render
+render.
 
 ```ts
 // DON'T DO THAT
@@ -225,6 +258,13 @@ return (
 #### useRequest
 
 ```ts
+interface AsyncState<T> {
+  loading: boolean;
+  error: unknown | null;
+  result: Awaited<T> | null;
+  promise: Promise<T> | null;
+}
+
 function useRequest<T, Args extends readonly any[]>(
   asyncFunction:
     ((...args: [ ...Args, cbOpts: { signal: AbortSignal } ]) => Promise<T> | Awaited<T>) |

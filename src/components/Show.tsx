@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { nodeToElement } from "$/helpers/nodeToElement";
+import { renderProp } from "$/helpers/renderProp";
 
 interface ShowProps<T> {
     when: T | undefined | null | false;
@@ -13,8 +14,5 @@ export function Show<T>({
   if (!props.when) {
     return nodeToElement(fallback);
   }
-  if (props.children instanceof Function) {
-    return nodeToElement(props.children(props.when));
-  }
-  return nodeToElement(props.children);
+  return renderProp(props.children, props.when);
 }
