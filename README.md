@@ -37,15 +37,19 @@ function For<T, U extends ReactNode>(props: {
 }): ReactElement | null;
 
 <For each={collection} fallback="list is empty!">
-  {(i) => <li key={i.name}>{i.name}</li>}
+  {(i) => <li key={i.id}>{i.name}</li>}
 </For>
 ```
 
-Rendering a collection of items from _each_ prop. If _each_ isn't an array
-or has zero length, display optional _fallback_. _children_ can be either a
-render prop function (more useful) or a static element. If a child is missing
-a key prop, then it's added automatically (using its array index).
-Any nullish child is ommited. If every child is ommited, _fallback_ is shown.
+Rendering a collection of items from _each_ prop.
+_children_ can be either a render prop function (more useful) or a static element.
+
+If _each_ isn't an array or has zero length, display optional _fallback_. Any
+nullish child is ommited. If every child is ommited, _fallback_ is shown.
+
+You can specify a key prop directly on the root element of a child, using
+item's data. If the key isn't specified or is falsy, then array index added as the
+key automatically to avoid non-keyed items in collection.
 
 #### Show
 
@@ -82,7 +86,8 @@ Switch-case alike, renders one of mutually exclusive conditions (described in
 
 Match should be a direct descendant of Switch and only the first
 Match with truthy _when_ is rendered.
-Optional _fallback_ is shown, if no Match has a truthy _when_
+
+If no match has truthy _when_, then optional _fallback_ prop is shown.
 
 #### ErrorBoundary
 
@@ -95,8 +100,7 @@ class ErrorBoundary extends Component<{
 
 <ErrorBoundary fallback={(err, reset) => (
   <div className="panel-danger">
-    I failed miserably:
-    <code>{JSON.stringify(err, undefined, 2)}</code>
+    I failed miserably: <code>{String(err)}</code>
     <button type="button" onClick={reset}>
       Try again!
     </button>
@@ -106,10 +110,14 @@ class ErrorBoundary extends Component<{
 </ErrorBoundary>
 ```
 
-General error boundary, catches synchronous errors in renders and displays _fallback_ content
-in that case. Also supports render prop function as _fallback_ which recieves the occured
-error and a reset function, which clears the occured error and performs a rerender
-of children content after that.
+General error boundary, catches synchronous errors in renders and displays _fallback_
+content.
+
+_fallback_ can be a static element of a render prop function, which recieves
+the occured error and _reset_ callback as its arguments.
+
+A call to _reset_ clears the occured error and performs a rerender of children
+content after that.
 
 #### Dynamic
 
@@ -148,8 +156,10 @@ function Portal(props: {
 </Portal>
 ```
 Component for rendering children outside of the component hierarchy root node.
+
 React events still go as usual. _mount_ can be either a native node, or a
 querySelector for such a node.
+
 If no node is provided renders nothing.
 <!-- _useShadow_ places the element in Shadow Root for style isolation -->
 
