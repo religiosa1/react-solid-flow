@@ -12,7 +12,7 @@ display, Portals, ErrorBoundaries, async helpers etc.
 - modern: react 16.8+, no legacy APIs or weird hacks
 - fully tested
 - easy to use
-- general async state / query with optional Suspense support
+- general async helpers and hooks and with Suspense support
 - mostly SolidJs compatible interface (where it makes sense in the react context)
 - covers common pitfalls (missed keys in maps, primitives as childrens etc.)
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
@@ -60,7 +60,7 @@ function Show<T>(props: {
   fallback?: ReactNode;
 }): ReactElement | null;
 
-<Show when={parentSeen() === 'mom'} fallback={<h3>nevermind...</h3>}>
+<Show when={parentSeen === 'mom'} fallback={<h3>nevermind...</h3>}>
   <h2>Hi mom!</h2>
 </Show>
 ```
@@ -80,6 +80,15 @@ function Match<T>(props: {
   when: T | undefined | null | false;
   children?: ReactNode | ((item: T) => ReactNode);
 }): ReactElement | null;
+
+<Switch fallback={<h3>nevermind...</h3>}>
+  <Match when={parentSeen === "mom"}>
+    Hi Mom!
+  </Match>
+  <Match when={parentSeen === "dad"}>
+    Hi Dad!
+  </Match>
+</Switch>
 ```
 Switch-case alike, renders one of mutually exclusive conditions (described in
 'when' prop of Match component) of a switch.
@@ -202,6 +211,8 @@ const resource = useAsyncState(Promise.resolve("Hi mom!"));
 
 Helpers for async state / suspenses.
 
+TODO FIXME remove and rewrite
+
 #### useAsyncState
 
 ```ts
@@ -250,6 +261,8 @@ if you need to perform some potentially repeated calls, or you have deps to your
 getter function, or you want to use Suspense you should see _useRequest_ hook bellow.
 
 After a call to set() method, previous result and error are reset to null.
+useAsyncState can __not__ be used in a Suspense, as it doesn't keep the same
+promise throughout its lifecycle.
 
 ```tsx
 const resource = useAsyncState(somePromise);

@@ -13,7 +13,6 @@ interface AwaitProps<TState extends AsyncState<unknown>> {
   children?: ((data: TState["result"]) => ReactNode) | ReactNode;
 }
 
-
 /** Component for displaying AsyncState */
 export function Await<TState extends AsyncState<unknown>>(props: AwaitProps<TState>) {
   if (props.for.loading) {

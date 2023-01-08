@@ -10,7 +10,7 @@ type DynamicProps<T> = PropsWithRef<T> & {
  * the props through to it.
  * For example, it can be usefull when you need to conditionally render
  * <a> or <span> */
-export function Dynamic<T>({
+export function Dynamic<T extends {}>({
   children,
   component,
   ...props
