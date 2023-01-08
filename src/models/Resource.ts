@@ -146,8 +146,10 @@ export function nextResource<T>(target: Resource<T>, data: {
   result.loading = !!data.loading;
   result.error = data.error;
   // latest we merge separately -- avoiding overwriting if it doesn't have anything
-  if (result.data != null) {
+  if (result.data !== undefined) {
     result.latest = result.data;
+  } else {
+    result.latest = target.latest;
   }
   result.state = getResourceStateByData(result);
   if (target.loading != result.loading) {
@@ -195,7 +197,7 @@ function reject<T>(storage: IResourceStorage, res: Resource<T>) {
   }
   const controls = storage.get(res.promise);
   if (controls?.reject instanceof Function) {
-    controls.reject(res.data);
+    controls.reject(res.error);
   }
   storage.delete(res.promise);
 }

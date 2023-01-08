@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { nextResource, createResource, getResourceStateByData } from "../Resource";
 import { defaultStorage, ResourceStorage } from "../ResourceStorage";
 
@@ -85,7 +85,7 @@ describe("createResource", () => {
     storage = new ResourceStorage();
   });
 
-  it("creates a resource with sync data", async () => {
+  it("creates a resource with sync data", () => {
     const res = createResource("test", storage);
     expect(res.data).toBe("test");
     expect(res.loading).toBe(false);
@@ -128,42 +128,173 @@ describe("createResource", () => {
   });
 });
 
-describe("advanceResource", () => {
-  // TODO nextResource test cases!!!
+describe("nextResource", () => {
+  it("correctly updates core data", () => {
+    let res = nextResource(createResource<string>(), {
+      data: "test1",
+      loading: true,
+      error: "test2",
+    });
+    expect(res.data).toBe("test1");
+    expect(res.loading).toBe(true);
+    expect(res.error).toBe("test2");
+  });
+
+  it("keeps latest data in the state", () => {
+    let res = nextResource(createResource<string>(), {
+      data: "test1",
+      loading: false,
+      error: undefined,
+    });
+    res = nextResource(res, {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    res = nextResource(res, {
+      data: undefined,
+      loading: false,
+      error: "test2",
+    });
+    res.promise.catch(() => {});
+    expect(res.latest).toBe("test1");
+  });
+
+  it("keeps the same promise if loading state keeps to be false", () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: false,
+      error: undefined,
+    });
+    const prms1 = res.promise;
+    res = nextResource(res, {
+      data: "test",
+      loading: false,
+      error: undefined,
+    });
+    const prms2 = res.promise;
+    expect(prms1).toBe(prms2);
+  });
+
+  it("updates resource state name", () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    expect(res.state).toBe("pending")
+    res = nextResource(res, {
+      data: "test",
+      loading: false,
+      error: undefined,
+    });
+    expect(res.state).toBe("ready")
+  });
+
+  it("keeps the same promise if loading state keeps to be true", () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    const prms1 = res.promise;
+    res = nextResource(res, {
+      data: "test",
+      loading: true,
+      error: undefined,
+    });
+    const prms2 = res.promise;
+    expect(prms1).toBe(prms2);
+  });
+
+  it("creates a new promise, if loading was swiched from false to true", () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: false,
+      error: undefined,
+    });
+    const prms1 = res.promise;
+    res = nextResource(res, {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    const prms2 = res.promise;
+    expect(prms1).not.toBe(prms2);
+  });
+
+  it("resolves the promise, if advanced from loaded state with data", async () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    res = nextResource(res, {
+      data: "test1",
+      loading: false,
+      error: undefined,
+    });
+
+    await expect(res.promise).resolves.toBe("test1");
+  });
+
+  it("rejects the promise, if advanced from loaded state with data", async () => {
+    let res = nextResource(createResource<boolean>(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    res = nextResource(res, {
+      data: undefined,
+      loading: false,
+      error: "test2",
+    });
+
+    await expect(res.promise).rejects.toThrow("test2");
+  });
 });
 
 describe("resource", () => {
   it("resource throws a promise on call, if it is in the loading state", () => {
-    const res = nextResource(
-      createResource(),
-      { data: undefined, loading: true, error: undefined
+    const res = nextResource(createResource(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
     });
     expect(() => res()).toThrow(Promise);
   });
 
   it("resource throws an error on call, if it is has some error", () => {
-    const res = nextResource(
-      createResource(),
-      { data: undefined, loading: false, error: "test"
+    const res = nextResource(createResource(), {
+      data: undefined,
+      loading: false,
+      error: "test",
     });
     expect(() => res()).toThrow("test");
   });
 
   it("resource throws a promise if it's loading and has an error simultaneously", () => {
-    const res = nextResource(
-      createResource(),
-      { data: undefined, loading: true, error: true
+    const res = nextResource(createResource(), {
+      data: undefined,
+      loading: true,
+      error: true,
     });
     expect(() => res()).toThrow(Promise);
   });
 
-  it("if someone tampered with the resource's promise, it still behaves ok", () => {
-    const res = nextResource(
-      createResource(),
-      { data: undefined, loading: true, error: false
+  it("if someone tampered with the resource promise, it still behaves ok", async () => {
+    const res = nextResource(createResource(), {
+      data: undefined,
+      loading: true,
+      error: false,
     });
     //@ts-expect-error
     res.promise = null;
-    expect(() => res()).toThrow(Promise);
+    try {
+      res();
+    } catch(e) {
+      // throws a promise, that rejects
+      await expect(e).rejects.toThrow("incorrect resource state");
+    }
   });
 })
