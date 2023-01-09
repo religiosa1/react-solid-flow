@@ -120,7 +120,7 @@ export function getResourceStateByData(i: ResourceLike<any>): ResourceState {
   if (i.error !== undefined) {
     return "errored";
   }
-  if (i.data) {
+  if (i.data !== undefined) {
     return "ready";
   }
   return "unresolved";

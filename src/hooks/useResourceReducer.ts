@@ -2,11 +2,9 @@ import { Resource, createResource, nextResource } from "../models/Resource";
 import { useReducer, Reducer} from "react";
 import { NullishError } from "../models/NullishError";
 
-type MaybePromise<T> = Promise<T> | Awaited<T>;
-type MaybeFunction<T> = T | (() => T);
 
 export function useResourceReducer<T>(
-  initialValue?: MaybeFunction<MaybePromise<T>>
+  initialValue?: Awaited<T> | (() => Awaited<T>)
 ) {
   return useReducer(
     resourceReducer as Reducer<Resource<T>, Action<T>>,
@@ -15,13 +13,13 @@ export function useResourceReducer<T>(
   );
 }
 
-function resourceInitializer<T>(val?: MaybeFunction<MaybePromise<T>>): Resource<T> {
+function resourceInitializer<T>(val?: Awaited<T> | (() => Awaited<T>)): Resource<T> {
   const value = val instanceof Function ? val() : val;
   return createResource(value);
 }
 
 type Action<T> =
-  | { type: "PEND" /* -> "pending" | "refreshing" */, payload: Promise<T> }
+  | { type: "PEND" /* -> "pending" | "refreshing" */ }
   | { type: "RESOLVE" /* -> "ready" */, payload: Awaited<T> }
   | { type: "SYNC-RESULT" /* -> "ready" */, payload: Awaited<T> }
   | { type: "REJECT" /* -> "errored" */, payload: any }
@@ -32,7 +30,7 @@ export function resourceReducer<T>(state: Resource<T>, action: Action<T>): Resou
       return nextResource(state, {
         loading: true,
         error: undefined,
-        data: undefined,
+        data: state.data,
       });
     case "RESOLVE":
       return nextResource(state, {

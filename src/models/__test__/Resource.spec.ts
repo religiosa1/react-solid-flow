@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { nextResource, createResource, getResourceStateByData } from "../Resource";
 import { defaultStorage, ResourceStorage } from "../ResourceStorage";
 
@@ -12,6 +12,8 @@ import { defaultStorage, ResourceStorage } from "../ResourceStorage";
 * | errored    | No*   | No      | Yes   |
 */
 describe("getResourceStateByData", () => {
+  // we're using falsy values where possible, to check that they're told apart
+  // from undefined correctly
   it("determines unresolved state", () => {
     expect(getResourceStateByData({
       data: undefined,
@@ -34,13 +36,13 @@ describe("getResourceStateByData", () => {
     expect(getResourceStateByData({
       data: undefined,
       loading: true,
-      error: true,
+      error: false,
     })).toBe("pending");
   });
 
   it("determines ready state", () => {
     expect(getResourceStateByData({
-      data: true,
+      data: false,
       loading: false,
       error: undefined,
     })).toBe("ready");
@@ -48,7 +50,7 @@ describe("getResourceStateByData", () => {
 
   it("determines refreshing state", () => {
     expect(getResourceStateByData({
-      data: true,
+      data: false,
       loading: true,
       error: undefined,
     })).toBe("refreshing");
@@ -56,9 +58,9 @@ describe("getResourceStateByData", () => {
 
   it("determines refreshing state with incorrectly set error", () => {
     expect(getResourceStateByData({
-      data: true,
+      data: false,
       loading: true,
-      error: true,
+      error: false,
     })).toBe("refreshing");
   });
 
@@ -66,7 +68,7 @@ describe("getResourceStateByData", () => {
     expect(getResourceStateByData({
       data: null,
       loading: false,
-      error: true,
+      error: false,
     })).toBe("errored");
   });
 
@@ -74,7 +76,7 @@ describe("getResourceStateByData", () => {
     expect(getResourceStateByData({
       data: true,
       loading: false,
-      error: true,
+      error: false,
     })).toBe("errored");
   });
 });
