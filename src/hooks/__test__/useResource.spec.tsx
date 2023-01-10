@@ -17,9 +17,9 @@ const fetcher = vi.fn(async(
 describe("useResource", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
-  beforeAll(() => { vi.useFakeTimers() });
-  afterAll(() => { vi.useRealTimers() });
+  afterEach(() => { vi.useRealTimers() });
 
   describe("useResource resolve/reject", () => {
     it("loads the data through the fetcher", async () => {
@@ -189,6 +189,37 @@ describe("useResource", () => {
       ));
       unmount();
       expect(handler).toBeCalledTimes(1);
+    });
+  });
+
+  describe("controls", () => {
+    it("allows to modify data directly", async () => {
+      const { result } = renderHook(() => useResource(
+        fetcher,
+        [3]
+      ));
+      const [_, controls] = result.current;
+      await act(() => controls.mutate(5));
+      const [ resource ] = result.current;
+      expect(resource.data).toBe(5);
+      expect(resource.state).toBe("ready");
+    });
+
+    it("allows to refetch the data", async () => {
+      const { result } = renderHook(() => useResource(
+        fetcher,
+        [3]
+      ));
+      await act(() => vi.advanceTimersToNextTimer());
+      const [_, controls] = result.current;
+      await act(async () => {
+        const prms = controls.refetch(10);
+        vi.advanceTimersToNextTimer();
+        return prms;
+      });
+      const [ resource ] = result.current;
+      expect(resource.data).toBe(10);
+      expect(fetcher).toBeCalledTimes(2);
     });
   });
 });

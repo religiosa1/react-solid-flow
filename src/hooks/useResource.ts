@@ -59,17 +59,53 @@ export function useResource<T, TArgs extends readonly any[]>(
   }, [dispatch]);
 
   const fetcherFn = useCallback(
-    (...args: [ ...TArgs, FetcherOpts ]) => fetcher(...args),
+    (refetching: boolean, ...args: [ ...TArgs ]) => {
+      let val: Promise<T> | T;
+      const cont = controller.current;
+      try {
+        val = fetcher(...args, {
+          signal: cont?.signal!,
+          refetching,
+        });
+        if (val instanceof Promise) {
+          handler(val);
+        } else {
+          dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T>})
+        }
+        return val;
+      } catch(e) {
+        dispatch({type: "REJECT", payload: e});
+        if (refetching) {
+          throw e;
+        }
+        return undefined as T;
+      }
+
+      async function handler(val: Promise<T>) {
+        dispatch({ type: "PEND" });
+        try {
+          const result = await val;
+          // As fetcher can completely ignore AbortController we're checking
+          // for race conditions separately, by checking that AbortController
+          // instance hasn't changed between calls.
+          if (cont !== controller.current) { return; }
+          dispatch({ type: "RESOLVE", payload: result });
+          onCompleted?.(result);
+        } catch (e) {
+          if (e instanceof Error && e.name === "AbortError") { return; }
+          if (cont !== controller.current) { return; }
+          dispatch({ type: "REJECT", payload: e });
+          onError?.(e);
+        }
+      }
+    },
     skipFnMemoization ? [ fetcher ] : []
   );
 
   const refetch = useCallback((...args: TArgs) => {
     controller.current?.abort();
     controller.current = new AbortController();
-    return fetcherFn(...args, {
-      signal: controller.current.signal,
-      refetching: true
-    });
+    return fetcherFn(true, ...args);
   }, [fetcherFn]);
 
   const controls = useMemo(() => ({ mutate, refetch }), [ mutate, refetch ]);
@@ -87,39 +123,7 @@ export function useResource<T, TArgs extends readonly any[]>(
       return;
     }
 
-    const cont = controller.current;
-    async function handler(val: Promise<T>) {
-      dispatch({ type: "PEND" });
-      try {
-        const result = await val;
-        // As fetcher can completely ignore AbortController we're checking
-        // for race conditions separately, by checking that AbortController
-        // instance hasn't changed between calls.
-        if (cont !== controller.current) { return; }
-        dispatch({ type: "RESOLVE", payload: result });
-        onCompleted?.(result);
-      } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") { return; }
-        if (cont !== controller.current) { return; }
-        dispatch({ type: "REJECT", payload: e });
-        onError?.(e);
-      }
-    }
-
-    try {
-      const val = fetcherFn(...deps, {
-        signal: cont?.signal!,
-        refetching: false,
-      });
-      if (val instanceof Promise) {
-        handler(val);
-      } else {
-        dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T>})
-      }
-    } catch(e) {
-      dispatch({type: "REJECT", payload: e});
-    }
-
+    fetcherFn(false, ...deps);
 
     return () => {
       controller.current?.abort();
@@ -127,7 +131,7 @@ export function useResource<T, TArgs extends readonly any[]>(
     }
   // onCompleted and onError are intentionally ommited, as we don't want to
   // retrigger the fetching, if someone forgot to memoize it
-  }, [ ...deps, fetcherFn, dispatch ])
+  }, [ ...deps, fetcherFn ])
 
   return useMemo(() => [ resource, controls ], [ resource, controls ]);
 }
