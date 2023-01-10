@@ -16,7 +16,7 @@ type ResourceReturn<T, TArgs extends readonly any[]> = [
 
 export type ResourceOptions<T> = {
   /** Initial value for the resource */
-  initialValue?: Promise<T> | Awaited<T> | (() => Promise<T> | Awaited<T>);
+  initialValue?: Awaited<T> | (() => Awaited<T>);
   /** resolve callback */
   onCompleted?: (data: Awaited<T>) => void;
   /** rejection callback */
@@ -33,11 +33,10 @@ export interface FetcherOpts {
 }
 
 export function useResource<T, TArgs extends readonly any[]>(
-  // FIXME signature, deps is not the same as args
   fetcher:
     | ((...args: [ ...TArgs, FetcherOpts ]) => Promise<T> | T)
     | ((...args: [ ...TArgs ]) => Promise<T> | T),
-  deps: TArgs = [] as unknown as TArgs,
+  deps: [...TArgs] = [] as unknown as [...TArgs],
   {
     initialValue,
     onCompleted,
@@ -46,6 +45,8 @@ export function useResource<T, TArgs extends readonly any[]>(
     skipFnMemoization,
   }: ResourceOptions<T> = {}
 ): ResourceReturn<T, TArgs> {
+  // it's actually initialized in the effect bellow, so we don't create empty controllers
+  // on each render
   const controller = useRef<AbortController>();
   const skip = useRef<boolean>(skipFirstRun);
 
@@ -74,19 +75,23 @@ export function useResource<T, TArgs extends readonly any[]>(
   const controls = useMemo(() => ({ mutate, refetch }), [ mutate, refetch ]);
 
   useEffect(() => {
+    skip.current = skipFirstRun;
+    if (!controller.current) {
+      controller.current = new AbortController();
+    }
+  }, [ skipFirstRun ]);
+
+  useEffect(() => {
     if (skip.current) {
       skip.current = false;
       return;
     }
 
-    async function handler() {
+    const cont = controller.current;
+    async function handler(val: Promise<T>) {
       dispatch({ type: "PEND" });
-      const cont = controller.current;
       try {
-        const result = await fetcherFn(...deps, {
-          signal: cont?.signal!,
-          refetching: false,
-        });;
+        const result = await val;
         // As fetcher can completely ignore AbortController we're checking
         // for race conditions separately, by checking that AbortController
         // instance hasn't changed between calls.
@@ -100,14 +105,28 @@ export function useResource<T, TArgs extends readonly any[]>(
         onError?.(e);
       }
     }
-    handler();
+
+    try {
+      const val = fetcherFn(...deps, {
+        signal: cont?.signal!,
+        refetching: false,
+      });
+      if (val instanceof Promise) {
+        handler(val);
+      } else {
+        dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T>})
+      }
+    } catch(e) {
+      dispatch({type: "REJECT", payload: e});
+    }
+
 
     return () => {
       controller.current?.abort();
       controller.current = new AbortController();
     }
   // onCompleted and onError are intentionally ommited, as we don't want to
-  // retrigger the fetching, if someone forgot to memoize it.
+  // retrigger the fetching, if someone forgot to memoize it
   }, [ ...deps, fetcherFn, dispatch ])
 
   return useMemo(() => [ resource, controls ], [ resource, controls ]);
