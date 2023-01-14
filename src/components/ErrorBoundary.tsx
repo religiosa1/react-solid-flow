@@ -2,8 +2,11 @@ import { Component } from "react";
 import type { ReactNode } from "react";
 
 interface ErrorBoundaryProps {
+  /** renderProp (or static content) to display if error has occured */
   fallback?: ReactNode | ((err: unknown, reset: () => void) => ReactNode);
+  /** content to display when no error was catched */
   children?: ReactNode;
+  /** callback to call, when an error happens */
   onCatch?: (error: unknown, errorInfo: unknown) => void;
 }
 
@@ -11,6 +14,7 @@ interface ErrorBoundaryState {
   error: unknown;
 }
 
+/** General ErrorBoundary component */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);

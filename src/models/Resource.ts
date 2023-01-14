@@ -36,8 +36,9 @@ export interface Resource<T> extends ResourceLike<T> {
   /** A promise that resolves/rejects with the resource.
    *
    * It is NOT the same promise as the one, that was provided by the fetcher,
-   * as it changes only when the resource at whole resolves/rejects or reloads.
-   * Also this promise can be rejected with AbortError at any time on refetch.
+   * this is resource promise (mostly required for Suspense), it resolves/rejects
+   * with reosurce itselfs and automatically renews when it makes sense for
+   * the Suspense to not trigger reloading, depending on state transitions.
    */
   promise: Promise<T>;
   /** accessor for Suspense
@@ -173,6 +174,17 @@ export function nextResource<T>(target: Resource<T>, data: {
   return result;
 }
 
+ /**
+  * Should the promise renew in the derived state?
+  *
+  * | from state | unresolved | pending | refreshing | ready | errored |
+  * |:-----------|:----------:|:-------:|:-----------|:-----:|:--------|
+  * | unresolved | Old        | Old     | New        | Old   | Old     |
+  * | pending    | New*       | Old     | New*       | Old   | Old     |
+  * | refreshing | New*       | New*    | Old        | Old   | Old     |
+  * | ready      | New        | New     | New        | New   | New     |
+  * | errored    | New        | New     | New        | New   | New     |
+  */
 function shouldRenew(current: Resource<any>, previous: Resource<any>): boolean {
   if (previous.state === "unresolved") {
     return current.state === "refreshing";
@@ -180,7 +192,7 @@ function shouldRenew(current: Resource<any>, previous: Resource<any>): boolean {
   if (previous.state === "ready" || previous.state === "errored") {
     return true;
   }
-  // pending and refreshing
+  // previous state was pending or refreshing
   return (
     current.state === "unresolved"
     || (current.state === "refreshing" && previous.state === "pending")
