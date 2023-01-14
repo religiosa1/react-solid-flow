@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Resource } from "../models/Resource";
 import { useResourceReducer } from "./useResourceReducer";
 
-type ResourceReturn<T, TArgs extends readonly any[]> = [
+export type ResourceReturn<T, TArgs extends readonly any[]> = [
   Readonly<Resource<T>>,
   {
     /** Manually set the value.
@@ -108,8 +108,6 @@ export function useResource<T, TArgs extends readonly any[]>(
     return fetcherFn(true, ...args);
   }, [fetcherFn]);
 
-  const controls = useMemo(() => ({ mutate, refetch }), [ mutate, refetch ]);
-
   useEffect(() => {
     skip.current = skipFirstRun;
     if (!controller.current) {
@@ -133,5 +131,5 @@ export function useResource<T, TArgs extends readonly any[]>(
   // retrigger the fetching, if someone forgot to memoize it
   }, [ ...deps, fetcherFn ])
 
-  return useMemo(() => [ resource, controls ], [ resource, controls ]);
+  return [ resource, { mutate, refetch } ];
 }

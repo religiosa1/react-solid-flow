@@ -138,7 +138,7 @@ export function getResourceStateByData(i: ResourceLike<any>): ResourceState {
 export function nextResource<T>(target: Resource<T>, data: {
   loading: boolean,
   data?: Awaited<T>,
-  error: any,
+  error?: any,
 }, storage = defaultStorage): Resource<T> {
   const result = createResource<T>();
 
@@ -152,20 +152,40 @@ export function nextResource<T>(target: Resource<T>, data: {
     result.latest = target.latest;
   }
   result.state = getResourceStateByData(result);
-  if (target.loading != result.loading) {
-    // Resoving, rejecting or recreating the promise, as the loading state has changed
-    if (result.loading) {
-      renew(storage, result);
-    } else if (result.error !== undefined) {
-      reject(storage, result);
-    } else {
-      resolve(storage, result);
-    }
+  if (shouldRenew(result, target)) {
+    // recreating the promise
+    renew(storage, result);
+    // There are a couple of cases when we want to resolve old promise
+    // TODO and cover that all with test cases
+    // if (result.state === "refreshing" && target.state === "unresolved") {
+    //   resolve(storage, target);
+    // }
   } else {
     // otherwise, reusing the old promise, so Suspense is happy
     result.promise = target.promise;
   }
+  // resolve and reject won't let us to double resolve a promise
+  if (result.data !== undefined && result.data !== target.data) {
+    resolve(storage, result);
+  } else if (result.error !== undefined && result.error !== target.error) {
+    reject(storage, result);
+  }
   return result;
+}
+
+function shouldRenew(current: Resource<any>, previous: Resource<any>): boolean {
+  if (previous.state === "unresolved") {
+    return current.state === "refreshing";
+  }
+  if (previous.state === "ready" || previous.state === "errored") {
+    return true;
+  }
+  // pending and refreshing
+  return (
+    current.state === "unresolved"
+    || (current.state === "refreshing" && previous.state === "pending")
+    || (current.state === "pending" && previous.state === "refreshing")
+  );
 }
 
 function renew<T>(storage: IResourceStorage, res: Resource<T>): void {
@@ -198,6 +218,8 @@ function reject<T>(storage: IResourceStorage, res: Resource<T>) {
   const controls = storage.get(res.promise);
   if (controls?.reject instanceof Function) {
     controls.reject(res.error);
+    // muting unhandledRejection promise error
+    res.promise.catch(()=>{});
   }
   storage.delete(res.promise);
 }

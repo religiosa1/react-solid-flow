@@ -56,28 +56,28 @@ describe("useResource", () => {
       expect(resource.data).toBe(5);
     });
 
-    it("errors in sync fetchers update sync, resulting in errored state", () => {
+    it("errors in sync fetchers update sync, resulting in errored state", async () => {
       const { result } = renderHook(() => useResource(
         () => { throw new Error("test"); },
         [],
       ));
       expect(result.current[0].state).toBe("errored");
       expect(result.current[0].error.message).toBe("test");
+      await expect(result.current[0].promise).rejects.toThrow("test");
     });
 
-    // FIXME
-    // it.only("errors in async fetchers result in errored state", async () => {
-    //   const { result } = renderHook(() => useResource(
-    //     async () => {
-    //       await pause(t);
-    //       throw new Error("TEST");
-    //     },
-    //     [],
-    //   ));
-    //   console.log("state", result.current[0].state);
-    //   await act(() => vi.advanceTimersToNextTimer());
-    //   expect(result.current[0].state).toBe("errored");
-    // });
+    it("errors in async fetchers result in errored state", async () => {
+      const { result } = renderHook(() => useResource(
+        async () => {
+          await pause(t);
+          throw new Error("TEST");
+        },
+        [],
+      ));
+      await act(() => vi.advanceTimersToNextTimer());
+      expect(result.current[0].state).toBe("errored");
+      await expect(result.current[0].promise).rejects.toThrow("TEST");
+    });
   });
 
   describe("dependency tracking and memoization", () => {

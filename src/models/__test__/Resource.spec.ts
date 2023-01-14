@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nextResource, createResource, getResourceStateByData } from "../Resource";
+import { nextResource, createResource, getResourceStateByData, Resource } from "../Resource";
 import { defaultStorage, ResourceStorage } from "../ResourceStorage";
 
 /*
@@ -86,13 +86,24 @@ describe("createResource", () => {
   beforeEach(() => {
     storage = new ResourceStorage();
   });
+  const stripData = <T>(res: Resource<T>) => ({
+    data: res.data,
+    loading: res.loading,
+    latest: res.latest,
+    error: res.error,
+    promise: res.promise
+  });
 
   it("creates a resource with sync data", () => {
     const res = createResource("test", storage);
-    expect(res.data).toBe("test");
-    expect(res.loading).toBe(false);
-    expect(res.error).toBeUndefined();
-    expect(res.latest).toBeUndefined();
+    expect(stripData(res)).toEqual({
+      data: "test",
+      loading: false,
+      error: undefined,
+      latest: undefined,
+      promise: expect.any(Promise),
+    });
+
     expect(res.promise).toBeInstanceOf(Promise);
     expect(storage.has(res.promise)).toBeFalsy();
     expect(res.promise).resolves.toBe("test");
@@ -100,32 +111,38 @@ describe("createResource", () => {
 
   it("creates a resource with async data", () => {
     const res = createResource(new Promise(() => {}), storage);
-    expect(res.data).toBeUndefined();
-    expect(res.loading).toBe(true);
-    expect(res.error).toBeUndefined();
-    expect(res.latest).toBeUndefined();
-    expect(res.promise).toBeInstanceOf(Promise);
+    expect(stripData(res)).toEqual({
+      data: undefined,
+      loading: true,
+      error: undefined,
+      latest: undefined,
+      promise: expect.any(Promise),
+    });
     expect(storage.has(res.promise)).toBeTruthy();
   });
 
   it("correctly fills the default storage", () => {
     const res = createResource(new Promise(() => {}));
-    expect(res.data).toBeUndefined();
-    expect(res.loading).toBe(true);
-    expect(res.error).toBeUndefined();
-    expect(res.latest).toBeUndefined();
-    expect(res.promise).toBeInstanceOf(Promise);
+    expect(stripData(res)).toEqual({
+      data: undefined,
+      loading: true,
+      error: undefined,
+      latest: undefined,
+      promise: expect.any(Promise),
+    });
     expect((defaultStorage as WeakMap<any, any>).has(res.promise)).toBeTruthy();
   });
 
 
   it("creates an empty resource", () => {
     const res = createResource(undefined, storage);
-    expect(res.data).toBeUndefined();
-    expect(res.loading).toBe(false);
-    expect(res.error).toBeUndefined();
-    expect(res.latest).toBeUndefined();
-    expect(res.promise).toBeInstanceOf(Promise);
+    expect(stripData(res)).toEqual({
+      data: undefined,
+      loading: false,
+      error: undefined,
+      latest: undefined,
+      promise: expect.any(Promise),
+    });
     expect(storage.has(res.promise)).toBeTruthy();
   });
 });
@@ -162,6 +179,21 @@ describe("nextResource", () => {
     expect(res.latest).toBe("test1");
   });
 
+  it("updates resource state name", () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    expect(res.state).toBe("pending")
+    res = nextResource(res, {
+      data: "test",
+      loading: false,
+      error: undefined,
+    });
+    expect(res.state).toBe("ready")
+  });
+
   it("keeps the same promise if loading state keeps to be false", () => {
     let res = nextResource(createResource<string>(), {
       data: undefined,
@@ -178,53 +210,6 @@ describe("nextResource", () => {
     expect(prms1).toBe(prms2);
   });
 
-  it("updates resource state name", () => {
-    let res = nextResource(createResource<string>(), {
-      data: undefined,
-      loading: true,
-      error: undefined,
-    });
-    expect(res.state).toBe("pending")
-    res = nextResource(res, {
-      data: "test",
-      loading: false,
-      error: undefined,
-    });
-    expect(res.state).toBe("ready")
-  });
-
-  it("keeps the same promise if loading state keeps to be true", () => {
-    let res = nextResource(createResource<string>(), {
-      data: undefined,
-      loading: true,
-      error: undefined,
-    });
-    const prms1 = res.promise;
-    res = nextResource(res, {
-      data: "test",
-      loading: true,
-      error: undefined,
-    });
-    const prms2 = res.promise;
-    expect(prms1).toBe(prms2);
-  });
-
-  it("creates a new promise, if loading was swiched from false to true", () => {
-    let res = nextResource(createResource<string>(), {
-      data: undefined,
-      loading: false,
-      error: undefined,
-    });
-    const prms1 = res.promise;
-    res = nextResource(res, {
-      data: undefined,
-      loading: true,
-      error: undefined,
-    });
-    const prms2 = res.promise;
-    expect(prms1).not.toBe(prms2);
-  });
-
   it("resolves the promise, if advanced from loaded state with data", async () => {
     let res = nextResource(createResource<string>(), {
       data: undefined,
@@ -236,7 +221,20 @@ describe("nextResource", () => {
       loading: false,
       error: undefined,
     });
+    await expect(res.promise).resolves.toBe("test1");
+  });
 
+  it("resolves the promise on sync data updates", async () => {
+    let res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: false,
+      error: undefined,
+    });
+    res = nextResource(res, {
+      data: "test1",
+      loading: false,
+      error: undefined,
+    });
     await expect(res.promise).resolves.toBe("test1");
   });
 
@@ -251,8 +249,98 @@ describe("nextResource", () => {
       loading: false,
       error: "test2",
     });
-
     await expect(res.promise).rejects.toThrow("test2");
+  });
+  it("rejects the promise on sync errors", async () => {
+    let res = nextResource(createResource<boolean>(), {
+      data: undefined,
+      loading: false,
+      error: undefined,
+    });
+    res = nextResource(res, {
+      data: undefined,
+      loading: false,
+      error: "test2",
+    });
+    await expect(res.promise).rejects.toThrow("test2");
+  });
+});
+
+describe("nextResource promise renewal", () => {
+  const getAllPossibleResourcePromises = (base: Resource<string>) => ({
+    refreshing: nextResource(base, { data: "1234567", loading: true,  error: undefined }).promise,
+    pending:    nextResource(base, { data: undefined, loading: true,  error: undefined }).promise,
+    ready:      nextResource(base, { data: "1234567", loading: false, error: undefined }).promise,
+    errored:    nextResource(base, { data: undefined, loading: false, error: "1234567" }).promise,
+    unresolved: nextResource(base, { data: undefined, loading: false, error: undefined }).promise,
+  });
+
+  it("from unresolved state only refreshing result in promise renewal", () => {
+    const res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: false,
+      error: undefined,
+    });
+    const prmss = getAllPossibleResourcePromises(res);
+
+    expect(prmss.pending).toBe(res.promise);
+    expect(prmss.ready).toBe(res.promise);
+    expect(prmss.refreshing).not.toBe(res.promise);
+    expect(prmss.errored).toBe(res.promise);
+    expect(prmss.unresolved).toBe(res.promise);
+  });
+
+  it("from pending state only unresolved and refreshing renew the promise", () => {
+    const res = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: true,
+      error: undefined,
+    });
+    const prmss = getAllPossibleResourcePromises(res);
+
+    expect(prmss.pending).toBe(res.promise);
+    expect(prmss.ready).toBe(res.promise);
+    expect(prmss.refreshing).not.toBe(res.promise);
+    expect(prmss.errored).toBe(res.promise);
+    expect(prmss.unresolved).not.toBe(res.promise);
+  });
+
+  it("from refreshing state only pending and unresolved renew a promise", () => {
+    const res = nextResource(createResource<string>(), {
+      data: "23123",
+      loading: true,
+      error: undefined,
+    });
+    const prmss = getAllPossibleResourcePromises(res);
+
+    expect(prmss.pending).not.toBe(res.promise);
+    expect(prmss.ready).toBe(res.promise);
+    expect(prmss.refreshing).toBe(res.promise);
+    expect(prmss.errored).toBe(res.promise);
+    expect(prmss.unresolved).not.toBe(res.promise);
+  });
+
+  it("any state derived from ready or errored has a new promise", () => {
+    const resReady = nextResource(createResource<string>(), {
+      data: "1asdf",
+      loading: false,
+      error: undefined,
+    });
+    const prmssReady = getAllPossibleResourcePromises(resReady);
+
+    const resErrored = nextResource(createResource<string>(), {
+      data: undefined,
+      loading: false,
+      error: "adsf",
+    });
+    const prmssErrored = getAllPossibleResourcePromises(resErrored);
+
+    const notTheSame = (target: Promise<string>) =>
+      (collection: Record<string, Promise<string>>) =>
+        Object.values(collection).every(item => item !== target);
+
+    expect(prmssReady).toSatisfy(notTheSame(resReady.promise));
+    expect(prmssErrored).toSatisfy(notTheSame(resErrored.promise));
   });
 });
 
