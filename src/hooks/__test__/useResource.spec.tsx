@@ -136,7 +136,19 @@ describe("useResource", () => {
       expect(resource.data).toBe(2);
       expect(fn2).toBeCalled();
     });
-  })
+
+    it("allows to skip initial call with skipFirstRun flag", () => {
+      const { rerender } = renderHook((a: number) => useResource(
+        fetcher,
+        [a],
+        { skipFirstRun: true }
+      ), { initialProps: 1 });
+      vi.advanceTimersToNextTimer();
+      expect(fetcher).not.toBeCalled();
+      act(() => rerender(2));
+      expect(fetcher).toBeCalledTimes(1);
+    });
+  });
 
   describe("abortions, race conditions and no unmounted state updates", () => {
     it("aborts unresolved fetchers via AbortSignal", async () => {
@@ -192,6 +204,39 @@ describe("useResource", () => {
     });
   });
 
+  describe("special options",  () => {
+    it("calls onCompleted if it's provided when the resource is resolved", async () => {
+      const onCompleted = vi.fn();
+      renderHook(() => useResource(
+        fetcher,
+        [1],
+        { onCompleted }
+      ));
+      await act(() => vi.advanceTimersToNextTimer());
+      expect(onCompleted).toBeCalledTimes(1);
+      expect(onCompleted).toBeCalledWith(1);
+    });
+
+    it("calls onError if it's provided when the resource is rejected", async () => {
+      const err = new Error("test");
+      const onError = vi.fn();
+      renderHook(() => useResource(
+        async () => {
+          await pause(t);
+          throw err;
+        },
+        [],
+        { onError }
+      ));
+      try {
+        await act(() => vi.advanceTimersToNextTimer());
+      } catch(e) {
+        expect(onError).toBeCalledTimes(1);
+        expect(onError).toBeCalledWith(err);
+      }
+    });
+  });
+
   describe("controls", () => {
     it("allows to modify data directly", async () => {
       const { result } = renderHook(() => useResource(
@@ -220,6 +265,19 @@ describe("useResource", () => {
       const [ resource ] = result.current;
       expect(resource.data).toBe(10);
       expect(fetcher).toBeCalledTimes(2);
+    });
+
+    it("throws syncronous refetch error", () => {
+      const { result } = renderHook(() => useResource(
+        () => { throw new Error("test") },
+        [],
+        { skipFirstRun: true }
+      ));
+      const [_, controls] = result.current;
+
+      act(() => {
+        expect(() => controls.refetch()).toThrow("test");
+      });
     });
   });
 });

@@ -1,6 +1,6 @@
 import { Children, ReactElement, isValidElement } from "react";
 import type { ReactNode } from "react";
-import { nodeToElement } from "$/helpers/nodeToElement";
+import { nodeToElement } from "../helpers/nodeToElement";
 
 interface SwitchProps {
   children: ReactNode;

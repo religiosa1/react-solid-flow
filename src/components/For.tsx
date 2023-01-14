@@ -1,6 +1,6 @@
 import { Fragment, isValidElement } from "react";
 import type { ReactElement, ReactNode } from "react";
-import { nodeToElement } from "$/helpers/nodeToElement";
+import { nodeToElement } from "../helpers/nodeToElement";
 
 interface ForProps<T, U extends ReactNode> {
   /** Array to iterate over */

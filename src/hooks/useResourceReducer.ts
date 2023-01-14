@@ -2,7 +2,6 @@ import { Resource, createResource, nextResource } from "../models/Resource";
 import { useReducer, Reducer} from "react";
 import { NullishError } from "../models/NullishError";
 
-
 export function useResourceReducer<T>(
   initialValue?: Awaited<T> | (() => Awaited<T>)
 ) {

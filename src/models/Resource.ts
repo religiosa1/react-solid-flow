@@ -141,7 +141,8 @@ export function nextResource<T>(target: Resource<T>, data: {
   data?: Awaited<T>,
   error?: any,
 }, storage = defaultStorage): Resource<T> {
-  const result = createResource<T>();
+  // FIXME here we create redundant promises in storage and never actually remove them
+  const result = createResource<T>(undefined, storage);
 
   result.data = data.data;
   result.loading = !!data.loading;
@@ -210,6 +211,9 @@ function renew<T>(storage: IResourceStorage, res: Resource<T>): void {
   });
   res.promise = promise;
   storage.set(promise, controls!);
+  // making all resolve/reject automatically clean promise
+  const clear = () => storage.delete(promise);
+  promise.then(clear, clear);
 }
 
 function resolve<T>(storage: IResourceStorage, res: Resource<T>) {
@@ -220,7 +224,6 @@ function resolve<T>(storage: IResourceStorage, res: Resource<T>) {
   if (controls?.resolve instanceof Function) {
     controls.resolve(res.data);
   }
-  storage.delete(res.promise);
 }
 
 function reject<T>(storage: IResourceStorage, res: Resource<T>) {
@@ -233,5 +236,4 @@ function reject<T>(storage: IResourceStorage, res: Resource<T>) {
     // muting unhandledRejection promise error
     res.promise.catch(()=>{});
   }
-  storage.delete(res.promise);
 }
