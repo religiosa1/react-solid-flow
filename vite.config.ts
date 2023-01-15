@@ -23,7 +23,7 @@ export default defineConfig({
       name,
       entry: resolve(__dirname, 'src/lib.ts'),
       formats: ['es', 'umd'],
-      fileName: (format) => `${name}.${format}.js`,
+      fileName: (format) => `${name}.${format}.${format === "es" ? "mjs" : "js"}`,
     },
     rollupOptions: {
       external: ['react', 'react-dom'],

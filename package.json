@@ -33,7 +33,6 @@
     "vitest": "^0.27.1"
   },
   "main": "dist/react-control-flow.umd.js",
-  "es2015": "dist/react-control-flow.es.js",
-  "module": "dist/react-control-flow.es.js",
+  "es2015": "dist/react-control-flow.es.mjs",
   "types": "dist/react-control-flow.es.d.ts"
 }
