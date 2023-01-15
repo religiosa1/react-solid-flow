@@ -244,7 +244,21 @@ export function useResource<T, TArgs extends readonly any[]>(
 ): ResourceReturn<T, TArgs>;
 ```
 
-TODO describe this hook
+Creates a resource object, that reflects the result of async request.
+
+It calls fetcher function every time deps array has changed and uses its
+result in resource object.
+
+Deps array is passed to the fetcher function as arguments and special object
+containing AbortSignal and additional data is passed as the last argument. It
+can be missed altogether if your resource only loads once on mount.
+
+This signal can be directly passed to your fetch functions to abort it.
+Every unsettled request will be aborted if deps array is changed, or if the
+component with this hook unmounts.
+
+useResource performs checks of race conditions and avoids unmounted state
+update, even if your fetcher function doesn't abort (it really should though).
 
 To use the resource inside of a Suspense, you need to call it as a function.
 Just reading resource.data won't cut it, as it won't trigger the Suspense.
@@ -262,9 +276,47 @@ const Employee = ({ employeeId }) => {
     </Suspense>
   )
 };
-
-
 ```
+
+Second value of the return tuple is contol object, which gives you the ability
+to directly change the resource value or retrigger the fetcher function manually.
+FetcherOpts with abort controller is added automatically.
+
+_latest_ field of resource  will return the last returned value and won't
+trigger Suspense. This can be useful if you want to show the out-of-date data
+while the new data is loading.
+
+Resource state field represents the current resource state:
+
+| state      | data  | loading | error |
+|:-----------|:-----:|:-------:|:-----:|
+| unresolved | No    | No      | No    |
+| pending    | No    | Yes     | No    |
+| ready      | Yes   | No      | No    |
+| refreshing | Yes   | Yes     | No    |
+| errored    | No    | No      | Yes   |
+
+##### useResourceOptions
+
+**`initial value`**
+
+If initial value is passed makes the initial state either ready or pending,
+depending on whether it was a sync value or a promise.
+
+**`onCompleted` and `onError`**
+
+callbacks can be passed to the hook to be called when resource resolves or
+rejects correspondingly.
+
+**`skipFirstRun`**
+
+enables you to skip first automatic trigger of fetcher function. It will be
+triggered only after deps change
+
+**`skipFnMemoization`**
+
+with this flag, fetcher function won't be memoized and its change will result
+in calls to it (the same way as if deps array was changed)
 
 ## Contributing
 If you have any ideas or suggestions or want to report a bug, feel free to
