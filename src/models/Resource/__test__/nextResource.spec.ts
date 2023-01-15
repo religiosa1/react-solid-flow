@@ -1,5 +1,5 @@
 import type { Resource } from "..";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createResource } from "../createResource";
 import { nextResource } from "../nextResource";
 import { ResourceStorage } from "../ResourceStorage";

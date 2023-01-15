@@ -14,8 +14,7 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   test: {
-    globals: true,
-    "testNamePattern": "",
+    globals: false,
     environment: 'jsdom',
     setupFiles: "./test/setup.ts",
   },
