@@ -1,4 +1,5 @@
 import { defaultStorage, IResourceStorage, PromiseControls } from "./ResourceStorage";
+import { AbortError } from "./AbortError";
 
 export interface ResourceLike<T> {
   /** Is new data currently loading */
@@ -60,43 +61,6 @@ export interface Resource<T> extends ResourceLike<T> {
 
 //------------------------------------------------------------------------------
 
-/** Create a new resource */
-export function createResource<T>(
-  data?: Promise<T> | Awaited<T>,
-  storage = defaultStorage
-): Resource<T> {
-  const res: Resource<T> = function(this: Resource<T>) {
-    if (res.loading) {
-      if (!(res.promise instanceof Promise)) {
-        throw Promise.reject(new Error("incorrect resource state"));
-      }
-      throw res.promise;
-    }
-    if (res.error) {
-      throw res.error;
-    }
-    return res.data!;
-  };
-
-  if (data instanceof Promise) {
-    res.data = undefined as Awaited<T>;
-    res.loading = true;
-    renew(storage, res);
-  } else {
-    res.data = data;
-    res.loading = false;
-    if (data !== undefined) {
-      res.promise = Promise.resolve(data);
-    } else {
-      renew(storage, res);
-    }
-  }
-  res.error = undefined;
-  res.latest = undefined;
-  res.state = getResourceStateByData(res);
-  return res;
-}
-
 /**
  * Determine resource-like state, based on its fields values.
  *
@@ -108,7 +72,7 @@ export function createResource<T>(
  * | refreshing | Yes   | Yes     | No*   |
  * | errored    | No*   | No      | Yes   |
  *
- * Values marked with * symbol are expected to equal the specified value,
+ * Values marked with * are expected to equal the specified value,
  * but actually ignored, when determining the status.
  */
 export function getResourceStateByData(i: ResourceLike<any>): ResourceState {
@@ -127,52 +91,69 @@ export function getResourceStateByData(i: ResourceLike<any>): ResourceState {
   return "unresolved";
 }
 
+/** Create a new resource */
+export function createResource<T>(
+  data?: Promise<T> | Awaited<T>,
+  storage = defaultStorage
+): Resource<T> {
+  const isAsync = data instanceof Promise;
+  const res = createResourceStub<T>(isAsync ? { loading: true } : { data });
+
+  if (isAsync || data === undefined) {
+    renew(storage, res);
+  } else {
+    // sync-ready, requires no controls as promise is already resolved
+    res.promise = Promise.resolve(data);
+  }
+
+  return res as Resource<T>;
+}
+
+
 /**
- * Creating a new derived resource, based on the existing resource,
- * setting its core data to the provided values and performing the required
+ * Creating a new derived resource, representing a change in state of existing
+ * resource.
+ *
+ * Sets its core data to its new values and performs all of the required
  * side-effects (promises resolution/rejecting/renewal, setting latest data etc.)
  *
- * @param target source resource
+ * @param previous source resource
  * @param data data to patch into the resource
  * @returns new resource
  */
-export function nextResource<T>(target: Resource<T>, data: {
-  loading: boolean,
+export function nextResource<T>(previous: Resource<T>, data: {
   data?: Awaited<T>,
+  loading: boolean,
   error?: any,
 }, storage = defaultStorage): Resource<T> {
-  // FIXME here we create redundant promises in storage and never actually remove them
-  const result = createResource<T>(undefined, storage);
+  const current = createResourceStub<T>(data);
 
-  result.data = data.data;
-  result.loading = !!data.loading;
-  result.error = data.error;
-  // latest we merge separately -- avoiding overwriting if it doesn't have anything
-  if (result.data !== undefined) {
-    result.latest = result.data;
+  if (current.data !== undefined) {
+    current.latest = current.data;
   } else {
-    result.latest = target.latest;
+    current.latest = previous.latest;
   }
-  result.state = getResourceStateByData(result);
-  if (shouldRenew(result, target)) {
-    // recreating the promise
-    renew(storage, result);
-    // There are a couple of cases when we want to resolve old promise
-    // TODO and cover that all with test cases
-    // if (result.state === "refreshing" && target.state === "unresolved") {
-    //   resolve(storage, target);
-    // }
+
+  if (shouldRenew(current, previous)) {
+    renew(storage, current);
+    // some incorrect but technically possible with some direct modifications
+    // and malintent state changes can result in hang up promises in storage
+    // so we're cancelling them and clearing them out of storage
+    // TODO explicit test cases
+    if (previous.state === "pending" || previous.state === "refreshing") {
+      reject(storage, previous, new AbortError());
+    }
   } else {
     // otherwise, reusing the old promise, so Suspense is happy
-    result.promise = target.promise;
+    current.promise = previous.promise;
   }
-  // resolve and reject won't let us to double resolve a promise
-  if (result.data !== undefined && result.data !== target.data) {
-    resolve(storage, result);
-  } else if (result.error !== undefined && result.error !== target.error) {
-    reject(storage, result);
+
+  if (current.state === "ready") {
+    resolve(storage, current);
+  } else if (current.state === "errored") {
+    reject(storage, current);
   }
-  return result;
+  return current as Resource<T>;
 }
 
  /**
@@ -185,8 +166,13 @@ export function nextResource<T>(target: Resource<T>, data: {
   * | refreshing | New*       | New*    | Old        | Old   | Old     |
   * | ready      | New        | New     | New        | New   | New     |
   * | errored    | New        | New     | New        | New   | New     |
+  *
+  * Transitions marked with * also require previous promise cancellation
   */
-function shouldRenew(current: Resource<any>, previous: Resource<any>): boolean {
+function shouldRenew(
+  current: { state: ResourceState },
+  previous: { state: ResourceState }
+): boolean {
   if (previous.state === "unresolved") {
     return current.state === "refreshing";
   }
@@ -201,7 +187,40 @@ function shouldRenew(current: Resource<any>, previous: Resource<any>): boolean {
   );
 }
 
-function renew<T>(storage: IResourceStorage, res: Resource<T>): void {
+/*----------------------------------------------------------------------------*/
+
+type ResourceStub<T> = Omit<Resource<T>, "promise"> & {
+  promise: Resource<T>['promise'] | undefined
+};
+
+/** resource without the promise stuff */
+function createResourceStub<T>(data?: {
+  data?: Awaited<T> | undefined,
+  loading?: boolean;
+  error?: any;
+}) {
+  const res: ResourceStub<T> = function(this: ResourceStub<T>) {
+    if (res.loading) {
+      if (!(res.promise instanceof Promise)) {
+        throw Promise.reject(new Error("incorrect resource state"));
+      }
+      throw res.promise;
+    }
+    if (res.error) {
+      throw res.error;
+    }
+    return res.data!;
+  };
+  res.data = data?.data
+  res.loading = !!data?.loading;
+  res.error = data?.error;
+  res.latest = undefined;
+  res.promise = undefined;
+  res.state = getResourceStateByData(res);
+  return res;
+}
+
+function renew<T>(storage: IResourceStorage, res: ResourceStub<T>): void {
   if (res.promise) {
     storage.delete(res.promise);
   }
@@ -211,12 +230,13 @@ function renew<T>(storage: IResourceStorage, res: Resource<T>): void {
   });
   res.promise = promise;
   storage.set(promise, controls!);
-  // making all resolve/reject automatically clean promise
+  // making all resolve/reject automatically remove the promise from storage
+  // in case someone will call controls from the storage directly
   const clear = () => storage.delete(promise);
   promise.then(clear, clear);
 }
 
-function resolve<T>(storage: IResourceStorage, res: Resource<T>) {
+function resolve<T>(storage: IResourceStorage, res: ResourceStub<T>) {
   if (!res?.promise) {
     return;
   }
@@ -226,14 +246,12 @@ function resolve<T>(storage: IResourceStorage, res: Resource<T>) {
   }
 }
 
-function reject<T>(storage: IResourceStorage, res: Resource<T>) {
+function reject<T>(storage: IResourceStorage, res: ResourceStub<T>, error?: any) {
   if (!res?.promise) {
     return;
   }
   const controls = storage.get(res.promise);
   if (controls?.reject instanceof Function) {
-    controls.reject(res.error);
-    // muting unhandledRejection promise error
-    res.promise.catch(()=>{});
+    controls.reject(error ?? res.error);
   }
 }
