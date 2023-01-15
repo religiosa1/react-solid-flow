@@ -19,6 +19,7 @@ export function nextResource<T>(previous: Resource<T>, data: {
   data?: Awaited<T>,
   loading: boolean,
   error?: any,
+  promise?: Promise<T>,
 }, storage = defaultStorage): Resource<T> {
   const current = createResourceStub<T>(data);
 
@@ -27,18 +28,10 @@ export function nextResource<T>(previous: Resource<T>, data: {
   } else {
     current.latest = previous.latest;
   }
-
+  // we copy promise anyway so renew can handle it properly
+  current.promise = previous.promise;
   if (shouldRenew(current, previous)) {
     renew(storage, current);
-    // some incorrect but technically possible with some direct modifications
-    // and malintent state changes can result in hang up promises in storage
-    // so we're cancelling them and clearing them out of storage
-    if (previous.state === "pending" || previous.state === "refreshing") {
-      reject(storage, previous, new AbortError());
-    }
-  } else {
-    // otherwise, reusing the old promise, so Suspense is happy
-    current.promise = previous.promise;
   }
 
   if (current.state === "ready") {
@@ -55,8 +48,8 @@ export function nextResource<T>(previous: Resource<T>, data: {
   * | from state | unresolved | pending | refreshing | ready | errored |
   * |:-----------|:----------:|:-------:|:-----------|:-----:|:--------|
   * | unresolved | Old        | Old     | New        | Old   | Old     |
-  * | pending    | New        | Old     | New*       | Old   | Old     |
-  * | refreshing | New        | New*    | Old        | Old   | Old     |
+  * | pending    | New        | Old     | New        | Old   | Old     |
+  * | refreshing | New        | New     | Old        | Old   | Old     |
   * | ready      | New        | New     | New        | New   | New     |
   * | errored    | New        | New     | New        | New   | New     |
   *

@@ -13,6 +13,7 @@ export interface ResourceLike<T> {
 }
 
 export type ResourceState = "unresolved" | "pending" | "ready" | "refreshing" | "errored";
+
 export interface Resource<T> extends ResourceLike<T> {
   /** State name
    *

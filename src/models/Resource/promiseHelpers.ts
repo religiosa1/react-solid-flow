@@ -1,9 +1,15 @@
+import { AbortError } from "../AbortError";
 import { IResourceStorage, PromiseControls } from "./ResourceStorage";
 import { ResourceStub } from "./resourceStub";
 
 export function renew<T>(storage: IResourceStorage, res: ResourceStub<T>): void {
   if (res.promise) {
-    storage.delete(res.promise);
+    // resolve/reject leads to promise deletion from storage
+    // if we still have it, then we need reject it first
+    const controls = storage.get(res.promise);
+    if (controls) {
+      controls.reject(new AbortError());
+    }
   }
   let controls: PromiseControls;
   const promise = new Promise<T>((resolve, reject) => {
