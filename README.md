@@ -176,27 +176,26 @@ If no node is provided renders nothing.
 #### Await
 
 ```ts
-interface AsyncState<T> {
-  loading: boolean;
-  error: unknown | null;
-  result: Awaited<T> | null;
-  promise: Promise<T> | null;
+export interface ResourceLike<T> {
+  loading?: boolean;
+  data: Awaited<T> | undefined;
+  error: any;
 }
 
 function Await<T>(props: {
-  for: AsyncState<T>;
+  for: ResourceLike<T>;
   fallback?: (() => ReactNode) | ReactNode;
   catch?: ((err: unknown) => ReactNode) | ReactNode;
   children?: ((data: Awaited<T>) => ReactNode) | ReactNode;
 }): ReactElement | null;
 ```
 
-Component for displaying AsyncState (as returned by useAsyncState or useRequest).
+Component for displaying some resource-like async data. It can be either
+a resource returned by the useResource hook in this library, or any other
+object, that conforms to this interface (i.e. responses from appollo-client).
 
 ```tsx
-const resource = useRequest(() => fetch(`/api/v1/employees`), []);
-// or
-const resource = useAsyncState(Promise.resolve("Hi mom!"));
+const [ resource ] = useResource(() => fetch(`/api/v1/employees`));
 
 <Await
   for={resource}
@@ -211,130 +210,60 @@ const resource = useAsyncState(Promise.resolve("Hi mom!"));
 
 Helpers for async state / suspenses.
 
-TODO FIXME remove and rewrite
-
-#### useAsyncState
-
-```ts
-interface AsyncState<T> {
-  loading: boolean;
-  error: unknown | null;
-  result: Awaited<T> | null;
-  promise: Promise<T> | null;
-}
-
-function useAsyncState<T, TContext = never>(
-  initialValue?: (() => Promise<T> | Awaited<T>) | Promise<T> | Awaited<T>,
-  opts?: {
-    onCompleted?: (data: Awaited<T>, context: TContext) => void;
-    onError?: (error: unknown, context: TContext) => void;
-    /** arbitrary data, passed to callbacks, capturing context at the moment in which resource was set */
-    context?: TContext
-  }
-): AsyncState<T> & {
-  /** setting async state to the next value */
-  set: (val: Promise<T> | Awaited<T>) => void;
-};
-```
-
-Turning a promise into AsyncState, exposing common async data: loading, result
-and error. It also prevents updates on unmounted components and race conditions.
-
-If initial value or set() argument isn't a promise, it's resolved immediately,
-and promise field contains a fake immediately resolved promise (for consistency)
-and loading immediately set to false.
-
-As with useState, if _initialValue_ is a function, it's treated as a defered
-initialization. It's called only once on the first render and its result is used
-as the initial value. You should us that to avoid refetching something on every
-render.
-
-```ts
-// DON'T DO THAT
-const resource = useAsyncState(fetch("/api/v1/employees"));
-// DO THAT INSTEAD -- wrap it into a funtion
-const resource = useAsyncState(() => fetch("/api/v1/employees"));
-```
-
-Generally, this hook is better suited for one-of promise wraps and small stuff,
-if you need to perform some potentially repeated calls, or you have deps to your
-getter function, or you want to use Suspense you should see _useRequest_ hook bellow.
-
-After a call to set() method, previous result and error are reset to null.
-useAsyncState can __not__ be used in a Suspense, as it doesn't keep the same
-promise throughout its lifecycle.
+#### useResource
 
 ```tsx
-const resource = useAsyncState(somePromise);
 
-return (
-  resource.loading ? (
-    <Preloader />
-  ) : resource.error ? (
-    <ErrorMessage error={resource.error} />
-  ) : (
-    <FooComponent data={resource.result} />
-  )
-);
-```
+type ResourceReturn<T, TArgs extends readonly any[]> = [
+  Readonly<Resource<T>>,
+  {
+    mutate: (v: Awaited<T>) => void;
+    refetch: (...args: TArgs) => Promise<T> | T;
+  }
+];
 
-#### useRequest
+export type ResourceOptions<T> = {
+  initialValue?: Awaited<T> | (() => Awaited<T>);
+  onCompleted?: (data: Awaited<T>) => void;
+  onError?: (error: unknown) => void;
+  skipFirstRun?: boolean;
+  skipFnMemoization?: boolean;
+};
 
-```ts
-interface AsyncState<T> {
-  loading: boolean;
-  error: unknown | null;
-  result: Awaited<T> | null;
-  promise: Promise<T> | null;
+export interface FetcherOpts {
+  refetching: boolean;
+  signal: AbortSignal;
 }
 
-function useRequest<T, Args extends readonly any[]>(
-  asyncFunction:
-    ((...args: [ ...Args, cbOpts: { signal: AbortSignal } ]) => Promise<T> | Awaited<T>) |
-    ((...args: [ ...Args ]) => Promise<T> | Awaited<T>),
-  params: [ ...Args ],
-  opts?: {
-    /** initial value (before the first callback call, null otherwise) */
-    initialValue?: Promise<T> | Awaited<T>;
-    /** Skip first run (before params change)  */
-    skipFirstRun?: boolean;
-    /** Don't memoize asyncFunction, rerun it every time it changes */
-    skipFnMemoization?: boolean;
-    onCompleted?: (data: Awaited<T>, context: Args) => void;
-    onError?: (error: unknown, context: Args) => void;
-  }
-): AsyncState<T> & {
-  set: (val: Promise<T> | Awaited<T>) => void;
-  read: () => Awaited<T> | null;
-  /** Immediately rerun asyncFunction with provided args */
-  execute: (...args: Args) => void;
-};
+export function useResource<T, TArgs extends readonly any[]>(
+  fetcher:
+    | ((...args: [ ...TArgs, FetcherOpts ]) => Promise<T> | T)
+    | ((...args: [ ...TArgs ]) => Promise<T> | T),
+  deps: [...TArgs] = [] as unknown as [...TArgs],
+  opts?: ResourceOptions<T>
+): ResourceReturn<T, TArgs>;
 ```
 
-Tying async state to a memoized _asyncFunction_, calling it every time its
-dependencies change. Dependencies passed to _asyncFunction_ as arguments. Besides
-the specified dependencies, async function also recieves an abort signal, called
-on consequetive reruns (or manually) for cancellation of previous request.
-_asyncFunction_ can pass it down to fetch, axios or whatever to abort the query.
+TODO describe this hook
 
-You can optionally use it inside of Suspense. For that call _read()_ method
-inside of the render portion of your component (bellow any other hooks calls)
+To use the resource inside of a Suspense, you need to call it as a function.
+Just reading resource.data won't cut it, as it won't trigger the Suspense.
 
 ```tsx
 const Employee = ({ employeeId }) => {
-  const resource = useRequest(
+  const [ resource ] = useResource(
     (id, { signal }) => fetch(`/api/v1/employee/${id}`, { signal }),
     [ employeeId ]
   );
 
   return (
-    <div className="employee">{resource.read()?.data.name}</div>
+    <Suspense fallback="Loading...">
+      <div className="employee">{resource().data.name}</div>
+    </Suspense>
   )
 };
 
-<Suspense fallback="Loading...">
-  <Employee>
-</Suspense>
+
 ```
 
 ## Contributing

@@ -1,4 +1,6 @@
-import { Resource, createResource, nextResource } from "../models/Resource";
+import type { Resource } from "../models/Resource";
+import { createResource } from "../models/Resource/createResource";
+import { nextResource } from "../models/Resource/nextResource";
 import { useReducer, Reducer} from "react";
 import { NullishError } from "../models/NullishError";
 
