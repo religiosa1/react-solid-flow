@@ -23,6 +23,13 @@ export type ResourceOptions<T> = {
   onError?: (error: unknown) => void;
   /** Skip first run (before params change)  */
   skipFirstRun?: boolean;
+  /** Skip calls of fetcher (can still be called manually with refresh)
+   *
+   * Can be useful if you're waiting for some of deps to be in certain state
+   * before calling the fetcher or if you want to trigger the fetcher only
+   * manually on some event.
+   */
+  skip?: boolean;
   /** Don't memoize getter, rerun it every time it changes */
   skipFnMemoization?: boolean;
 };
@@ -42,13 +49,14 @@ export function useResource<T, TArgs extends readonly any[]>(
     onCompleted,
     onError,
     skipFirstRun = false,
+    skip = false,
     skipFnMemoization,
   }: ResourceOptions<T> = {}
 ): ResourceReturn<T, TArgs> {
   // it's actually initialized in the effect bellow, so we don't create empty controllers
   // on each render
   const controller = useRef<AbortController>();
-  const skip = useRef<boolean>(skipFirstRun);
+  const skipFirst = useRef<boolean>(skipFirstRun);
 
   const [ resource, dispatch ] = useResourceReducer(initialValue);
 
@@ -109,15 +117,18 @@ export function useResource<T, TArgs extends readonly any[]>(
   }, [fetcherFn]);
 
   useEffect(() => {
-    skip.current = skipFirstRun;
+    skipFirst.current = skipFirstRun;
     if (!controller.current) {
       controller.current = new AbortController();
     }
   }, [ skipFirstRun ]);
 
   useEffect(() => {
-    if (skip.current) {
-      skip.current = false;
+    if (skipFirst.current) {
+      skipFirst.current = false;
+      return;
+    }
+    if (skip) {
       return;
     }
 
@@ -129,7 +140,7 @@ export function useResource<T, TArgs extends readonly any[]>(
     }
   // onCompleted and onError are intentionally ommited, as we don't want to
   // retrigger the fetching, if someone forgot to memoize it
-  }, [ ...deps, fetcherFn ])
+  }, [ ...deps, skip, fetcherFn ])
 
   return [ resource, { mutate, refetch } ];
 }

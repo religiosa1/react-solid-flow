@@ -235,6 +235,41 @@ describe("useResource", () => {
         expect(onError).toBeCalledWith(err);
       }
     });
+
+    it("allows to skip automatic invocation of fetcher with skip flag", async () => {
+      const { result, rerender } = renderHook(([skip, value]) => useResource(
+        fetcher,
+        [value],
+        { skip }
+      ), { initialProps: [ true, 1 ] as [ boolean, number ] });
+      const [ resource ] = result.current;
+      expect(resource.data).toBeUndefined();
+      expect(resource.state).toBe("unresolved");
+      expect(fetcher).not.toBeCalled();
+      rerender([true, 2]);
+      expect(fetcher).not.toBeCalled();
+      rerender([false, 3]);
+      expect(fetcher).toBeCalledTimes(1);
+      await act(() => vi.advanceTimersToNextTimer());
+      expect(result.current[0].data).toBe(3);
+      expect(result.current[0].state).toBe("ready");
+    });
+
+    it("allows to manually call refetch when skip is supplied", async () => {
+      const { result, rerender } = renderHook((value) => useResource(
+        fetcher,
+        [value],
+        { skip: true  }
+      ), { initialProps: 1 });
+      const [ , controls ] = result.current;
+      await act(() => {
+        controls.refetch(2);
+        vi.advanceTimersToNextTimer()
+      });
+      const [ resource ] = result.current;
+      expect(resource.data).toBe(2);
+      expect(resource.state).toBe("ready");
+    });
   });
 
   describe("controls", () => {

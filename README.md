@@ -308,6 +308,14 @@ depending on whether it was a sync value or a promise.
 callbacks can be passed to the hook to be called when resource resolves or
 rejects correspondingly.
 
+**`skip`**
+
+Skip calls of fetcher (can still be called manually with refresh)
+
+It can be useful if you're waiting for some of deps to be in certain state
+before calling the fetcher or if you want to trigger the fetcher only
+manually on some event.
+
 **`skipFirstRun`**
 
 enables you to skip first automatic trigger of fetcher function. It will be
