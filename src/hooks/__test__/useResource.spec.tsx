@@ -30,6 +30,10 @@ describe("useResource", () => {
       const [ resource ] = result.current;
       expect(resource.data).toBeUndefined();
       expect(resource.state).toBe("pending");
+      expect(fetcher).toBeCalledWith(1, expect.objectContaining({
+        refetching: false,
+        signal: expect.any(AbortSignal),
+      }));
       await act(() => vi.advanceTimersToNextTimer());
       expect(result.current[0].data).toBe(1);
       expect(result.current[0].state).toBe("ready");
@@ -300,6 +304,10 @@ describe("useResource", () => {
       const [ resource ] = result.current;
       expect(resource.data).toBe(10);
       expect(fetcher).toBeCalledTimes(2);
+      expect(fetcher).toHaveBeenLastCalledWith(10, expect.objectContaining({
+        signal: expect.any(AbortSignal),
+        refetching: true,
+      }))
     });
 
     it("throws syncronous refetch error", () => {
@@ -313,6 +321,34 @@ describe("useResource", () => {
       act(() => {
         expect(() => controls.refetch()).toThrow("test");
       });
+    });
+
+    it("allows to abort current fetch call", async () => {
+      const handler = vi.fn();
+      const fetcher = vi.fn(async ({ signal }: {signal: AbortSignal}) => {
+        signal.addEventListener("abort", handler, { once: true });
+        await pause(t, { signal });
+      });
+      const { result } = renderHook(() => useResource(fetcher));
+      expect(handler).not.toBeCalled();
+      const [, controls] = result.current;
+      await act(() => controls.abort());
+      expect(handler).toBeCalledTimes(1);
+      expect(result.current[0].state).toBe("pending");
+    });
+
+    it("abort with reason other then AbortError will result in errored state", async () => {
+      const handler = vi.fn();
+      const fetcher = vi.fn(async ({ signal }: {signal: AbortSignal}) => {
+        signal.addEventListener("abort", handler, { once: true });
+        await pause(t, { signal });
+      });
+      const { result } = renderHook(() => useResource(fetcher));
+      const [, controls] = result.current;
+      await act(() => controls.abort("test"));
+      expect(handler).toBeCalledTimes(1);
+      expect(result.current[0].state).toBe("errored");
+      expect(result.current[0].error).toBe("test");
     });
   });
 });

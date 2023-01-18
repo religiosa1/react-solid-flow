@@ -12,7 +12,7 @@ display, Portals, ErrorBoundaries, async helpers etc.
 - modern: react 16.8+, no legacy APIs or weird hacks
 - fully tested
 - easy to use
-- general async helpers and hooks and with Suspense support
+- hooks and components for performing async operation with Suspense support
 - mostly SolidJs compatible interface (where it makes sense in the react context)
 - covers common pitfalls (missed keys in maps, primitives as childrens etc.)
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
@@ -128,6 +128,40 @@ the occured error and _reset_ callback as its arguments.
 A call to _reset_ clears the occured error and performs a rerender of children
 content after that.
 
+#### Await
+
+```ts
+export interface ResourceLike<T> {
+  loading?: boolean;
+  data: Awaited<T> | undefined;
+  error: any;
+}
+
+function Await<T>(props: {
+  for: ResourceLike<T>;
+  fallback?: (() => ReactNode) | ReactNode;
+  catch?: ((err: unknown) => ReactNode) | ReactNode;
+  children?: ((data: Awaited<T>) => ReactNode) | ReactNode;
+}): ReactElement | null;
+```
+
+Component for displaying some resource-like async data. It can be either
+a resource returned by the useResource hook in this library, or any other
+object, that conforms to this interface (i.e. responses from appollo-client).
+
+```tsx
+// See description of useResource hook bellow.
+const [ resource ] = useResource(() => fetch(`/api/v1/employees`));
+
+<Await
+  for={resource}
+  fallback="loading..."
+  catch={(err) => <div>Error: {String(err)}</div>}
+>
+  {(data) => <div>Resolved data: {data}</div>}
+</Await>
+```
+
 #### Dynamic
 
 ```tsx
@@ -172,40 +206,6 @@ querySelector for such a node.
 If no node is provided renders nothing.
 <!-- _useShadow_ places the element in Shadow Root for style isolation -->
 
-
-#### Await
-
-```ts
-export interface ResourceLike<T> {
-  loading?: boolean;
-  data: Awaited<T> | undefined;
-  error: any;
-}
-
-function Await<T>(props: {
-  for: ResourceLike<T>;
-  fallback?: (() => ReactNode) | ReactNode;
-  catch?: ((err: unknown) => ReactNode) | ReactNode;
-  children?: ((data: Awaited<T>) => ReactNode) | ReactNode;
-}): ReactElement | null;
-```
-
-Component for displaying some resource-like async data. It can be either
-a resource returned by the useResource hook in this library, or any other
-object, that conforms to this interface (i.e. responses from appollo-client).
-
-```tsx
-const [ resource ] = useResource(() => fetch(`/api/v1/employees`));
-
-<Await
-  for={resource}
-  fallback="loading..."
-  catch={(err) => <div>Error: {String(err)}</div>}
->
-  {(data) => <div>Resolved data: {data}</div>}
-</Await>
-```
-
 ### Hooks
 
 Helpers for async state / suspenses.
@@ -219,6 +219,7 @@ type ResourceReturn<T, TArgs extends readonly any[]> = [
   {
     mutate: (v: Awaited<T>) => void;
     refetch: (...args: TArgs) => Promise<T> | T;
+    abort: (reason?: any) => void;
   }
 ];
 
@@ -244,24 +245,41 @@ export function useResource<T, TArgs extends readonly any[]>(
 ): ResourceReturn<T, TArgs>;
 ```
 
-Creates a resource object, that reflects the result of async request.
+Creates a resource object, that reflects the result of async request, performed
+by the fetcher function. Result of fetcher call is resource `data` field,
+`loading` represents if there's a pending call to fetcher, and if the fetcher
+call was rejected, then the rejection value is stored in `error` field.
 
-It calls fetcher function every time deps array has changed and uses its
-result in resource object.
+`latest` field of resource will return the last returned value and won't
+trigger Suspense. This can be useful if you want to show the out-of-date data
+while the new data is loading.
 
-Deps array is passed to the fetcher function as arguments and special object
-containing AbortSignal and additional data is passed as the last argument. It
-can be missed altogether if your resource only loads once on mount.
+Resource `state` field represents the current resource state:
 
-This signal can be directly passed to your fetch functions to abort it.
+| state      | data  | loading | error |
+|:-----------|:-----:|:-------:|:-----:|
+| unresolved | No    | No      | No    |
+| pending    | No    | Yes     | No    |
+| ready      | Yes   | No      | No    |
+| refreshing | Yes   | Yes     | No    |
+| errored    | No    | No      | Yes   |
+
+`fetcher` function is called every time deps array is changed.
+
+Deps array is passed to the fetcher function as arguments and FetcherOpts object
+containing AbortSignal and additional data is passed as the last argument.
+
+FetcherOpts `signal` field should be directly passed to your fetch function
+(or any other async function supporting AbortController signal) to abort it.
+
 Every unsettled request will be aborted if deps array is changed, or if the
 component with this hook unmounts.
-
-useResource performs checks of race conditions and avoids unmounted state
-update, even if your fetcher function doesn't abort (it really should though).
+_useResource_ performs checks for race conditions and avoids unmounted state
+updates, even if your fetcher function doesn't react on signal abortion
+(but it really should though).
 
 To use the resource inside of a Suspense, you need to call it as a function.
-Just reading resource.data won't cut it, as it won't trigger the Suspense.
+Just reading resource.data won't cut it, as this won't trigger a Suspense.
 
 ```tsx
 const Employee = ({ employeeId }) => {
@@ -272,29 +290,35 @@ const Employee = ({ employeeId }) => {
 
   return (
     <Suspense fallback="Loading...">
-      <div className="employee">{resource().data.name}</div>
+      <div className="employee">{resource().name}</div>
+      {/* notice, that resource is called ^ as a function here */}
     </Suspense>
   )
 };
 ```
 
 Second value of the return tuple is contol object, which gives you the ability
-to directly change the resource value or retrigger the fetcher function manually.
-FetcherOpts with abort controller is added automatically.
+to control the resource imperatively.
 
-_latest_ field of resource  will return the last returned value and won't
-trigger Suspense. This can be useful if you want to show the out-of-date data
-while the new data is loading.
+**`mutate`**
 
-Resource state field represents the current resource state:
+Allows you to directly change the resource value.
 
-| state      | data  | loading | error |
-|:-----------|:-----:|:-------:|:-----:|
-| unresolved | No    | No      | No    |
-| pending    | No    | Yes     | No    |
-| ready      | Yes   | No      | No    |
-| refreshing | Yes   | Yes     | No    |
-| errored    | No    | No      | Yes   |
+**`refetch`**
+
+Allows you to call fetcher function manually with the required arguments.
+FetcherOpts with abort signal is added to arguments automatically.
+
+**`abort`**
+
+Allows you to abort the current fetcher call.
+
+If abort is performed with no reason, or with AbortError instance, then
+the state is still considered pending/refreshing, resource.error is
+not updated, and onError callback is not called.
+Any other reason will result in erorred resource state.
+
+Resource won't be refetched untill deps change again.
 
 ##### useResourceOptions
 

@@ -8,5 +8,5 @@ export { Portal } from "./components/Portal";
 export { Await } from "./components/Await";
 
 export * from "./models/Resource";
-
+export { AbortError } from "./models/AbortError";
 export { useResource } from "./hooks/useResource";

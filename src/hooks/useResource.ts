@@ -10,7 +10,22 @@ export type ResourceReturn<T, TArgs extends readonly any[]> = [
      * If fetcher was currently pending, it's aborted.
      */
     mutate: (v: Awaited<T>) => void;
+    /**
+     * Call refetch with supplied args.
+     *
+     * Fetcher opts added automatically. If fetcher was currently pending, it's aborted.
+     */
     refetch: (...args: TArgs) => Promise<T> | T;
+    /** Imperatively abort the current fetcher call.
+     *
+     * If abort is performed with no reason, or with AbortError instance, then
+     * the state is still considered pending/refreshing, resource.error is
+     * not updated, and onError callback is not called.
+     * Any other reason will result in erorred resource state.
+     *
+     * Resource won't be refetched untill deps change again.
+     */
+    abort: (reason?: any) => void;
   }
 ];
 
@@ -35,7 +50,10 @@ export type ResourceOptions<T> = {
 };
 
 export interface FetcherOpts {
+  /** is true, if the call to fetcher was triggered manually with refetch function,
+   * false otherwise */
   refetching: boolean;
+  /** can be used to abort operations in fetcher function, i.e. passed to fetch options */
   signal: AbortSignal;
 }
 
@@ -100,7 +118,7 @@ export function useResource<T, TArgs extends readonly any[]>(
           dispatch({ type: "RESOLVE", payload: result });
           onCompleted?.(result);
         } catch (e) {
-          if (e instanceof Error && e.name === "AbortError") { return; }
+          if (isAbortError(e)) { return; }
           if (cont !== controller.current) { return; }
           dispatch({ type: "REJECT", payload: e });
           onError?.(e);
@@ -115,6 +133,10 @@ export function useResource<T, TArgs extends readonly any[]>(
     controller.current = new AbortController();
     return fetcherFn(true, ...args);
   }, [fetcherFn]);
+
+  const abort = useCallback((reason?: any) => {
+    controller.current?.abort(reason);
+  }, []);
 
   useEffect(() => {
     skipFirst.current = skipFirstRun;
@@ -140,7 +162,14 @@ export function useResource<T, TArgs extends readonly any[]>(
     }
   // onCompleted and onError are intentionally ommited, as we don't want to
   // retrigger the fetching, if someone forgot to memoize it
-  }, [ ...deps, skip, fetcherFn ])
+  }, [ ...deps, skip, fetcherFn ]);
 
-  return [ resource, { mutate, refetch } ];
+  return [ resource, { mutate, refetch, abort } ];
+}
+
+function isAbortError(e: any): boolean {
+  // We can't really check if it's an instanceof DOMException as it doesn't
+  // exist in older node version, and we can't check if it's an instanceof
+  // Error, as jsdom implementation of DOMException isn't an instance of it.
+  return e != null && e.name === "AbortError";
 }
