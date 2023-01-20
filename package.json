@@ -29,10 +29,15 @@
     "typescript": "^4.9.4",
     "vite": "^4.0.4",
     "vite-plugin-dts": "^1.7.1",
-    "vite-tsconfig-paths": "^4.0.3",
     "vitest": "^0.27.1"
   },
   "main": "dist/react-control-flow.umd.js",
   "es2015": "dist/react-control-flow.es.mjs",
-  "types": "dist/react-control-flow.es.d.ts"
+  "types": "dist/react-control-flow.es.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/react-control-flow.es.mjs",
+      "require": "./dist/react-control-flow.umd.js"
+    }
+  }
 }

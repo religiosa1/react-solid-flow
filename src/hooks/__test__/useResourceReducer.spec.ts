@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
 import { useResourceReducer } from "../useResourceReducer";
-import { NullishError } from "$/models/NullishError";
+import { NullishError } from "../../models/NullishError";
 
 describe("useResourceReducer", () => {
   it("returns the initial state", () => {

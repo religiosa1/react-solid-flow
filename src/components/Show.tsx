@@ -6,7 +6,7 @@ interface ShowProps<T> {
   /** predicate */
   when: T | undefined | null | false;
   /** content (or renderProp) to display when predicate is truthy */
-  children: ReactNode | ((item: T) => ReactNode);
+  children: ReactNode | ((item: NonNullable<T>) => ReactNode);
   /** content to display when predicate is falsy */
   fallback?: ReactNode;
 }

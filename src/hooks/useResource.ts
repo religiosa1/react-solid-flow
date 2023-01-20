@@ -3,7 +3,7 @@ import type { Resource } from "../models/Resource";
 import { useResourceReducer } from "./useResourceReducer";
 
 export type ResourceReturn<T, TArgs extends readonly any[]> = [
-  Readonly<Resource<T>>,
+  Resource<T>,
   {
     /** Manually set the value.
      *
