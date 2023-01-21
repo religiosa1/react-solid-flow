@@ -94,10 +94,11 @@ describe("useResourceReducer", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
     const [ , dispatch ] = result.current;
     act(() => {
-      dispatch({ type: "REJECT", payload: undefined });
+      dispatch({ type: "REJECT", payload: null });
     });
     const [ resource ] = result.current;
     expect(resource.error).toBeInstanceOf(NullishError);
+    expect(resource.error.cause).toBeNull();
   });
 
   it("does nothing  on wrong dispatch types", async () => {

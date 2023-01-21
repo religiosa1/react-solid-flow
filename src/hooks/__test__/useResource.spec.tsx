@@ -243,9 +243,10 @@ describe("useResource", () => {
         { skip: true  }
       ), { initialProps: 1 });
       const [ , controls ] = result.current;
-      await act(() => {
-        controls.refetch(2);
-        vi.advanceTimersToNextTimer()
+      await act(async () => {
+        const prms = controls.refetch(2);
+        vi.advanceTimersToNextTimer();
+        await expect(prms).resolves.toBe(2);
       });
       const [ resource ] = result.current;
       expect(resource.data).toBe(2);

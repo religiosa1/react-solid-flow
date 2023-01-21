@@ -153,7 +153,7 @@ object, that conforms to this interface (i.e. responses from appollo-client).
 
 ```tsx
 // See description of useResource hook bellow.
-const [ resource ] = useResource(() => fetch(`/api/v1/employees`));
+const [ resource ] = useResource(() => fetch(`/api/v1/employees`).then(r => sr.json()));
 
 <Await
   for={resource}
@@ -263,7 +263,15 @@ Creating a Resource object, that reflects the result of async request, performed
 by the fetcher function.
 
 ```tsx
-const [{ data, error, loading }] = fetch(`/api/v1/employee/${id}`, { signal });
+const [{ data, error, loading }] = useResouce(
+  (id, { signal }) => fetch(`/api/v1/employee/${id}`, { signal }).json(r => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return r.json();
+  },
+  [id]
+);
 
 // or better use Await component from above
 return (
@@ -396,7 +404,7 @@ for that, if you want a recomendation, there's [suspend-react](https://github.co
 
 Check out useResource-examples.md to see different forms of it in action.
 
-Or check the demo project here [react-control-flow](todo).
+Or check the demo project here [react-control-flow-demo](todo).
 
 ## Contributing
 If you have any ideas or suggestions or want to report a bug, feel free to

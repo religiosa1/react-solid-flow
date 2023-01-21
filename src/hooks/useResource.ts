@@ -85,7 +85,7 @@ export function useResource<T, TArgs extends readonly any[]>(
   }, [dispatch]);
 
   const fetcherFn = useCallback(
-    (refetching: boolean, ...args: [ ...TArgs ]) => {
+    (refetching: boolean, ...args: [ ...TArgs ]): T | Promise<T> => {
       let val: Promise<T> | T;
       const cont = controller.current;
       try {
@@ -104,7 +104,7 @@ export function useResource<T, TArgs extends readonly any[]>(
         if (refetching) {
           throw e;
         }
-        return undefined as T;
+        return undefined as never;
       }
 
       async function handler(val: Promise<T>) {

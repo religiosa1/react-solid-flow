@@ -47,7 +47,10 @@ export function resourceReducer<T>(resource: Resource<T>, action: Action<T>): Re
     case "REJECT":
       return new Resource<T>({
         loading: false,
-        error: action.payload ?? new NullishError(),
+        error: action.payload ?? new NullishError(
+          "resource rejected with a nullish error",
+          { cause: action.payload }
+        ),
         data: undefined,
       }, resource);
     default:
