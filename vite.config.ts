@@ -24,10 +24,15 @@ export default defineConfig({
       fileName: (format) => `${name}.${format}.${format === "es" ? "mjs" : "js"}`,
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
+      external: [
+        "react",
+        "react/jsx-runtime",
+        "react-dom"
+      ],
       output: {
         globals: {
           react: "React",
+          "react/jsx-runtime": "jsxRuntime",
           "react-dom": "ReactDOM",
         },
       },

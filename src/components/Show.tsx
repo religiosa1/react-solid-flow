@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import { ReactElement, ReactNode } from "react";
 import { nodeToElement } from "../helpers/nodeToElement";
 import { renderProp } from "../helpers/renderProp";
 

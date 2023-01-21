@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import { ReactElement, ReactNode } from "react";
 import { renderProp } from "../helpers/renderProp";
 
 interface MatchProps<T> {

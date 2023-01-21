@@ -1,5 +1,5 @@
+import { ReactNode, ReactPortal } from "react"
 import { createPortal } from "react-dom";
-import type { ReactNode, ReactPortal } from "react"
 
 interface PortalProps {
   mount?: Element | DocumentFragment | string;

@@ -1,4 +1,4 @@
-import { Fragment, isValidElement } from "react";
+import React, { Fragment, isValidElement } from "react";
 import type { ReactElement, ReactNode } from "react";
 import { nodeToElement } from "../helpers/nodeToElement";
 

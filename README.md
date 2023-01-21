@@ -9,7 +9,7 @@ display, Portals, ErrorBoundaries, and helpers for async operations (fetches or
 whatever).
 
 - native typescript support
-- lightweight, zero 3d party dependencies, except react
+- lightweight: (7.5kB mjs, 5kb minified umd, 2.5kb gzip), tree-shakable, zero 3d party dependencies, except react and react-dom
 - modern: react 16.8+ .. 18.x, no legacy APIs or weird hacks
 - fully tested
 - easy to use
@@ -22,7 +22,7 @@ whatever).
 ## Installation
 
 ```sh
-npm install react-solid-flow
+npm install react-control-flow
 ```
 
 ## Usage
@@ -403,8 +403,6 @@ If you really want to use suspended data fetches, there are some 3d party libs
 for that, if you want a recomendation, there's [suspend-react](https://github.com/pmndrs/suspend-react)
 
 Check out useResource-examples.md to see different forms of it in action.
-
-Or check the demo project here [react-control-flow-demo](todo).
 
 ## Contributing
 If you have any ideas or suggestions or want to report a bug, feel free to

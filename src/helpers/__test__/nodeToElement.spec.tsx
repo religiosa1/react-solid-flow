@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect } from "vitest";
 import { isValidElement } from "react";
 import { nodeToElement } from "../nodeToElement";
