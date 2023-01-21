@@ -13,7 +13,6 @@ describe("useResourceReducer", () => {
     expect(resource.error).toBeUndefined();
     expect(resource.latest).toBeUndefined();
     expect(resource.state).toBe('unresolved');
-    expect(resource.promise).toBeInstanceOf(Promise);
     expect(dispatch).toBeInstanceOf(Function);
   });
 
@@ -58,7 +57,6 @@ describe("useResourceReducer", () => {
     expect(resource.error).toBeUndefined();
     expect(resource.latest).toBe(true);
     expect(resource.state).toBe('ready');
-    await expect(resource.promise).resolves.toBe(true);
   });
 
   it("'ready' -> 'refreshing' by the next 'PEND' call", () => {
@@ -90,7 +88,6 @@ describe("useResourceReducer", () => {
     expect(resource.error).toBe(true);
     expect(resource.latest).toBeUndefined();
     expect(resource.state).toBe('errored');
-    await expect(resource.promise).rejects.toThrow();
   });
 
   it("puts a special error type into Error on nullish rejects", async () => {

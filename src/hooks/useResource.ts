@@ -96,7 +96,7 @@ export function useResource<T, TArgs extends readonly any[]>(
         if (val instanceof Promise) {
           handler(val);
         } else {
-          dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T>})
+          dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T>});
         }
         return val;
       } catch(e) {
@@ -153,7 +153,6 @@ export function useResource<T, TArgs extends readonly any[]>(
     if (skip) {
       return;
     }
-
     fetcherFn(false, ...deps);
 
     return () => {

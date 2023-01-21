@@ -5,14 +5,16 @@ basic control-flow components and everyday async state hook library for
 [React](https://reactjs.org/)
 
 It fulfills everyday needs: iteration, conditional
-display, Portals, ErrorBoundaries, async helpers etc.
+display, Portals, ErrorBoundaries, and helpers for async operations (fetches or
+whatever).
 
-- typescript support
+- native typescript support
 - lightweight, zero 3d party dependencies, except react
-- modern: react 16.8+, no legacy APIs or weird hacks
+- modern: react 16.8+ .. 18.x, no legacy APIs or weird hacks
 - fully tested
 - easy to use
-- hooks and components for performing async operation with Suspense support
+- hooks and components for performing async operation; handling cancellations,
+  mutations, race conditions and more.
 - mostly SolidJs compatible interface (where it makes sense in the react context)
 - covers common pitfalls (missed keys in maps, primitives as childrens etc.)
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
@@ -56,7 +58,7 @@ key automatically to avoid non-keyed items in collection.
 ```tsx
 function Show<T>(props: {
   when: T | undefined | null | false;
-  children: ReactNode | ((item: T) => ReactNode);
+  children: ReactNode | ((item: NonNullable<T>) => ReactNode);
   fallback?: ReactNode;
 }): ReactElement | null;
 
@@ -208,14 +210,21 @@ If no node is provided renders nothing.
 
 ### Hooks
 
-Helpers for async state / suspenses.
+Helpers for async state.
 
 #### useResource
 
 ```tsx
+function useResource<T, TArgs extends readonly any[]>(
+  fetcher:
+    | ((...args: [ ...TArgs, FetcherOpts ]) => Promise<T> | T)
+    | ((...args: [ ...TArgs ]) => Promise<T> | T),
+  deps: [...TArgs] = [] as unknown as [...TArgs],
+  opts?: ResourceOptions<T>
+): ResourceReturn<T, TArgs>;
 
 type ResourceReturn<T, TArgs extends readonly any[]> = [
-  Readonly<Resource<T>>,
+  Resource<T>,
   {
     mutate: (v: Awaited<T>) => void;
     refetch: (...args: TArgs) => Promise<T> | T;
@@ -223,7 +232,7 @@ type ResourceReturn<T, TArgs extends readonly any[]> = [
   }
 ];
 
-export type ResourceOptions<T> = {
+type ResourceOptions<T> = {
   initialValue?: Awaited<T> | (() => Awaited<T>);
   onCompleted?: (data: Awaited<T>) => void;
   onError?: (error: unknown) => void;
@@ -231,28 +240,58 @@ export type ResourceOptions<T> = {
   skipFnMemoization?: boolean;
 };
 
-export interface FetcherOpts {
+interface FetcherOpts {
   refetching: boolean;
   signal: AbortSignal;
 }
 
-export function useResource<T, TArgs extends readonly any[]>(
-  fetcher:
-    | ((...args: [ ...TArgs, FetcherOpts ]) => Promise<T> | T)
-    | ((...args: [ ...TArgs ]) => Promise<T> | T),
-  deps: [...TArgs] = [] as unknown as [...TArgs],
-  opts?: ResourceOptions<T>
-): ResourceReturn<T, TArgs>;
+class Resource<T> implements ResourceLike<T> {
+  loading: boolean;
+  data: Awaited<T> | undefined;
+  error: any;
+  latest: Awaited<T> | undefined;
+  state: ResourceState;
+
+  constructor(init?: Partial<ResourceLike<T>>, previous?: { latest?: Awaited<T> });
+  static from<T>(data: Promise<T> | Awaited<T> | undefined): Resource<T>;
+  static getState(r: ResourceLike<any>): ResourceState;
+}
+
+type ResourceState = "unresolved" | "pending" | "ready" | "refreshing" | "errored";
+```
+Creating a Resource object, that reflects the result of async request, performed
+by the fetcher function.
+
+```tsx
+const [{ data, error, loading }] = fetch(`/api/v1/employee/${id}`, { signal });
+
+// or better use Await component from above
+return (
+  <div className="employee">
+    { loading ? (
+      <span>Loading...</span>
+    ) : error ? (
+      <span>Error happened</span>
+    ) : (
+      {data.name}
+    )}
+  </div>
+);
 ```
 
-Creates a resource object, that reflects the result of async request, performed
-by the fetcher function. Result of fetcher call is resource `data` field,
-`loading` represents if there's a pending call to fetcher, and if the fetcher
-call was rejected, then the rejection value is stored in `error` field.
+Result of fetcher call is resource `data` field, `loading` represents if there's
+a pending call to fetcher, and if the fetcher call was rejected, then the
+rejection value is stored in `error` field.
 
-`latest` field of resource will return the last returned value and won't
-trigger Suspense. This can be useful if you want to show the out-of-date data
-while the new data is loading.
+`latest` field of resource will return the last returned value.
+This can be useful if you want to show the out-of-date data while the new
+data is loading.
+
+`fetcher` function is called every time deps array is changed.
+
+Deps array is passed to the fetcher function as arguments and FetcherOpts object
+containing AbortSignal and additional data is added as the last argument.
+If deps array is ommited, fetcher is called only on mount.
 
 Resource `state` field represents the current resource state:
 
@@ -264,41 +303,31 @@ Resource `state` field represents the current resource state:
 | refreshing | Yes   | Yes     | No    |
 | errored    | No    | No      | Yes   |
 
-`fetcher` function is called every time deps array is changed.
-
-Deps array is passed to the fetcher function as arguments and FetcherOpts object
-containing AbortSignal and additional data is passed as the last argument.
 
 FetcherOpts `signal` field should be directly passed to your fetch function
 (or any other async function supporting AbortController signal) to abort it.
 
-Every unsettled request will be aborted if deps array is changed, or if the
+Every unsettled request will be aborted if deps array has been changed, or if the
 component with this hook unmounts.
+
 _useResource_ performs checks for race conditions and avoids unmounted state
 updates, even if your fetcher function doesn't react on signal abortion
 (but it really should though).
 
-To use the resource inside of a Suspense, you need to call it as a function.
-Just reading resource.data won't cut it, as this won't trigger a Suspense.
+_useResource_ optimized to trigger only one rerender on each Resource state
+change even in React@16.8, where no batching state updates are available.
 
 ```tsx
 const Employee = ({ employeeId }) => {
-  const [ resource ] = useResource(
+  const [ { data, loading, error} ] = useResource(
     (id, { signal }) => fetch(`/api/v1/employee/${id}`, { signal }),
     [ employeeId ]
   );
-
-  return (
-    <Suspense fallback="Loading...">
-      <div className="employee">{resource().name}</div>
-      {/* notice, that resource is called ^ as a function here */}
-    </Suspense>
-  )
 };
 ```
 
 Second value of the return tuple is contol object, which gives you the ability
-to control the resource imperatively.
+to handle the resource imperatively.
 
 **`mutate`**
 
@@ -318,7 +347,7 @@ the state is still considered pending/refreshing, resource.error is
 not updated, and onError callback is not called.
 Any other reason will result in erorred resource state.
 
-Resource won't be refetched untill deps change again.
+Resource won't be refetched until deps change again.
 
 ##### useResourceOptions
 
@@ -349,6 +378,25 @@ triggered only after deps change
 
 with this flag, fetcher function won't be memoized and its change will result
 in calls to it (the same way as if deps array was changed)
+
+If no initial value is provided to the useResource, and skip == false,
+skipFirstRun == false, resource is created with initial state `"pending"`
+(resource `loading` field === true), to avoid flickering of content.
+Otherwise, it's created with the `"unresolved"`.
+
+Currently, there's no plans of supporting Suspense. This possibility was
+investigated and abbandonded until the React team at least formally approves
+the usage of Suspense for anything else, besides components lazy loading.
+Implementation of Suspense support will require some global forms of promise
+cache and cahce busting, and most likely this implementation will come from
+the react itself, so it feels likke reinventing the wheel here.
+
+If you really want to use suspended data fetches, there are some 3d party libs
+for that, if you want a recomendation, there's [suspend-react](https://github.com/pmndrs/suspend-react)
+
+Check out useResource-examples.md to see different forms of it in action.
+
+Or check the demo project here [react-control-flow](todo).
 
 ## Contributing
 If you have any ideas or suggestions or want to report a bug, feel free to

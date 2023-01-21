@@ -1,6 +1,4 @@
-import type { Resource } from "../models/Resource";
-import { createResource } from "../models/Resource/createResource";
-import { nextResource } from "../models/Resource/nextResource";
+import { Resource } from "../models/Resource";
 import { useReducer, Reducer} from "react";
 import { NullishError } from "../models/NullishError";
 
@@ -16,7 +14,7 @@ export function useResourceReducer<T>(
 
 function resourceInitializer<T>(val?: Awaited<T> | (() => Awaited<T>)): Resource<T> {
   const value = val instanceof Function ? val() : val;
-  return createResource(value);
+  return Resource.from(value);
 }
 
 type Action<T> =
@@ -25,33 +23,34 @@ type Action<T> =
   | { type: "SYNC-RESULT" /* -> "ready" */, payload: Awaited<T> }
   | { type: "REJECT" /* -> "errored" */, payload: any }
 
-export function resourceReducer<T>(state: Resource<T>, action: Action<T>): Resource<T> {
+export function resourceReducer<T>(resource: Resource<T>, action: Action<T>): Resource<T> {
   switch (action?.type) {
     case "PEND":
-      return nextResource(state, {
+      return new Resource({
         loading: true,
         error: undefined,
-        data: state.data,
-      });
+        data: resource.data,
+      }, resource);
     case "RESOLVE":
-      return nextResource(state, {
+      return new Resource({
+        ...resource,
         loading: false,
         error: undefined,
         data: action.payload,
-      });
+      }, resource);
     case "SYNC-RESULT":
-      return nextResource(state, {
+      return new Resource({
         loading: false,
         error: undefined,
         data: action.payload,
-      });
+      }, resource);
     case "REJECT":
-      return nextResource(state, {
+      return new Resource<T>({
         loading: false,
         error: action.payload ?? new NullishError(),
         data: undefined,
-      });
+      }, resource);
     default:
-      return state;
+      return resource;
   }
 }
