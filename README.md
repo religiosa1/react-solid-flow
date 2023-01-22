@@ -5,18 +5,18 @@ basic control-flow components and everyday async state hook library for
 [React](https://reactjs.org/)
 
 It fulfills everyday needs: iteration, conditional
-display, Portals, ErrorBoundaries, and helpers for async operations (fetches or
-whatever).
+display, Portals, ErrorBoundaries, fetching and displaying async data, etc.
 
-- native typescript support
-- lightweight: (7.5kB mjs, 5kb minified umd, 2.5kb gzip), tree-shakable, zero 3d party dependencies, except react and react-dom
-- modern: react 16.8+ .. 18.x, no legacy APIs or weird hacks
-- fully tested
-- easy to use
-- hooks and components for performing async operation; handling cancellations,
-  mutations, race conditions and more.
-- mostly SolidJs compatible interface (where it makes sense in the react context)
-- covers common pitfalls (missed keys in maps, primitives as childrens etc.)
+- Native Typescript support
+- Lightweight: (5kb minified UMD, 2.5kb gzip), tree-shakable,
+- Zero third-party dependencies, except React and React-DOM
+- Modern: React 16.8+ .. 18.x, no legacy APIs or weird hacks
+- Fully tested
+- Easy to use
+- Hooks and components for performing async operations, handling cancellations,
+  mutations, race conditions, and more
+- Mostly SolidJS compatible interface (where it makes sense in the React context)
+- Covers common pitfalls (missed keys in maps, primitives as children, etc.)
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
 
 ## Installation
@@ -43,15 +43,18 @@ function For<T, U extends ReactNode>(props: {
 </For>
 ```
 
-Rendering a collection of items from _each_ prop.
-_children_ can be either a render prop function (more useful) or a static element.
+Rendering a collection of items from the _each_ prop.
 
-If _each_ isn't an array or has zero length, display optional _fallback_. Any
-nullish child is ommited. If every child is ommited, _fallback_ is shown.
+The _children_ prop can be either a render prop function (more useful)
+or a static element.
+
+If _each_ isn't an array or has zero length, display the optional _fallback_.
+
+Any nullish child is omitted. If every child is omitted, the _fallback_ prop is shown.
 
 You can specify a key prop directly on the root element of a child, using
 item's data. If the key isn't specified or is falsy, then array index added as the
-key automatically to avoid non-keyed items in collection.
+key automatically to avoid non-keyed items in the collection.
 
 #### Show
 
@@ -66,9 +69,8 @@ function Show<T>(props: {
   <h2>Hi mom!</h2>
 </Show>
 ```
-
-Conditionally render, depending on truthiness of _when_ props, either _children_
-or (optionally) _fallback_
+Conditionally renders, depending on truthiness of the _when_ prop, either the
+_children_ prop or (optionally) the _fallback_ prop.
 
 #### Switch / Match
 
@@ -92,13 +94,15 @@ function Match<T>(props: {
   </Match>
 </Switch>
 ```
-Switch-case alike, renders one of mutually exclusive conditions (described in
-'when' prop of Match component) of a switch.
 
-Match should be a direct descendant of Switch and only the first
-Match with truthy _when_ is rendered.
+Akin to switch-case, it renders one of the mutually exclusive conditions
+(described in the _when_ prop of the Match component) of a switch.
 
-If no match has truthy _when_, then optional _fallback_ prop is shown.
+The _Match_ component should be a direct descendant of the _Switch_ component,
+and only the first _Match_ with a truthy _when_ prop will be rendered.
+
+If no _Match_ component has a truthy _when_ prop, the optional _fallback_ prop
+will be shown.
 
 #### ErrorBoundary
 
@@ -121,14 +125,14 @@ class ErrorBoundary extends Component<{
 </ErrorBoundary>
 ```
 
-General error boundary, catches synchronous errors in renders and displays _fallback_
-content.
+General error boundary that catches synchronous errors in renders and displays
+the fallback content.
 
-_fallback_ can be a static element of a render prop function, which recieves
-the occured error and _reset_ callback as its arguments.
+The _fallback_ prop can be a static element or a render prop function, which
+receives the occurred error and the _reset_ callback as its arguments.
 
-A call to _reset_ clears the occured error and performs a rerender of children
-content after that.
+A call to the _reset_ function clears the occurred error and performs a
+re-render of _children_ after that.
 
 #### Await
 
@@ -147,9 +151,10 @@ function Await<T>(props: {
 }): ReactElement | null;
 ```
 
-Component for displaying some resource-like async data. It can be either
-a resource returned by the useResource hook in this library, or any other
-object, that conforms to this interface (i.e. responses from appollo-client).
+A component for displaying resource-like async data. It can be used with a
+resource returned by the _useResource_ hook in this library, or any other
+object that conforms to the required interface (such as responses from
+the Apollo Client).
 
 ```tsx
 // See description of useResource hook bellow.
@@ -183,8 +188,8 @@ function Dynamic<T>({
 </Dynamic>
 ```
 
-This component lets you insert an arbitrary Component or tag and passes
-its props to it (omitting component prop).
+This component allows you to insert an arbitrary component or tag and pass props
+to it (excluding the _component_ prop).
 
 #### Portal
 
@@ -200,12 +205,14 @@ function Portal(props: {
   </dialog>
 </Portal>
 ```
-Component for rendering children outside of the component hierarchy root node.
+This component renders _children_ outside of the component hierarchy's root node.
+React events will still function as usual.
 
-React events still go as usual. _mount_ can be either a native node, or a
-querySelector for such a node.
+The _mount_ prop can be either a native node or a query selector for such a node.
 
-If no node is provided renders nothing.
+If no node is provided, the component will render nothing.
+
+Plase notice, it requires react-dom as its depenndency.
 <!-- _useShadow_ places the element in Shadow Root for style isolation -->
 
 ### Hooks
@@ -213,6 +220,36 @@ If no node is provided renders nothing.
 Helpers for async state.
 
 #### useResource
+
+The `useResource` hook creates a Resource object that reflects the result of an
+asynchronous request performed by the fetcher function.
+
+```tsx
+const [{ data, error, loading }] = useResouce(
+  (id, { signal }) => fetch(`/api/v1/employee/${id}`, { signal }).json(r => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return r.json();
+  },
+  [id]
+);
+
+// or better use Await component from above
+return (
+  <div className="employee">
+    { loading ? (
+      <span>Loading...</span>
+    ) : error ? (
+      <span>Error happened</span>
+    ) : (
+      {data.name}
+    )}
+  </div>
+);
+```
+
+API signature:
 
 ```tsx
 function useResource<T, TArgs extends readonly any[]>(
@@ -259,49 +296,28 @@ class Resource<T> implements ResourceLike<T> {
 
 type ResourceState = "unresolved" | "pending" | "ready" | "refreshing" | "errored";
 ```
-Creating a Resource object, that reflects the result of async request, performed
-by the fetcher function.
 
-```tsx
-const [{ data, error, loading }] = useResouce(
-  (id, { signal }) => fetch(`/api/v1/employee/${id}`, { signal }).json(r => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    return r.json();
-  },
-  [id]
-);
+The result of the fetcher call is stored in the `data` field of the resource.
+The `loading` field represents if there is a pending call to the fetcher,
+and if the fetcher call was rejected, then the rejection value is stored in
+the `error` field.
 
-// or better use Await component from above
-return (
-  <div className="employee">
-    { loading ? (
-      <span>Loading...</span>
-    ) : error ? (
-      <span>Error happened</span>
-    ) : (
-      {data.name}
-    )}
-  </div>
-);
-```
-
-Result of fetcher call is resource `data` field, `loading` represents if there's
-a pending call to fetcher, and if the fetcher call was rejected, then the
-rejection value is stored in `error` field.
-
-`latest` field of resource will return the last returned value.
+The `latest` field will return the last returned value.
 This can be useful if you want to show the out-of-date data while the new
 data is loading.
 
-`fetcher` function is called every time deps array is changed.
+The fetcher function is called every time the dependencies array is changed.
 
-Deps array is passed to the fetcher function as arguments and FetcherOpts object
-containing AbortSignal and additional data is added as the last argument.
-If deps array is ommited, fetcher is called only on mount.
+The dependencies array is passed to the fetcher function as arguments and
+the `FetcherOpts` object containing AbortSignal and additional data is added
+as the last argument.
 
-Resource `state` field represents the current resource state:
+If the dependencies array is omitted, the fetcher is called only on mount.
+
+The `state` field represents the current resource state:
+2 / 2
+
+The `state` field represents the current state of the resource.
 
 | state      | data  | loading | error |
 |:-----------|:-----:|:-------:|:-----:|
@@ -312,18 +328,18 @@ Resource `state` field represents the current resource state:
 | errored    | No    | No      | Yes   |
 
 
-FetcherOpts `signal` field should be directly passed to your fetch function
-(or any other async function supporting AbortController signal) to abort it.
+The FetcherOpts's `signal` field should be directly passed to your fetch
+function (or any other async function that supports the AbortController signal)
+to abort it.
 
-Every unsettled request will be aborted if deps array has been changed, or if the
-component with this hook unmounts.
+Every unsettled request will be aborted if the dependencies array has been
+changed or if the component that uses this hook unmounts.
 
-_useResource_ performs checks for race conditions and avoids unmounted state
-updates, even if your fetcher function doesn't react on signal abortion
-(but it really should though).
+The useResource hook performs checks for race conditions and avoids unmounted
+state updates, even if your fetcher function doesn't react to signal abortion.
 
-_useResource_ optimized to trigger only one rerender on each Resource state
-change even in React@16.8, where no batching state updates are available.
+The useResource hook is optimized to trigger only one re-render on each
+resource state change.
 
 ```tsx
 const Employee = ({ employeeId }) => {
@@ -334,70 +350,61 @@ const Employee = ({ employeeId }) => {
 };
 ```
 
-Second value of the return tuple is contol object, which gives you the ability
-to handle the resource imperatively.
+The second value of the return tuple is the control object, which allows you to
+handle the resource imperatively.
 
-**`mutate`**
+- **`mutate`**:
+  Allows you to directly change the resource value.
+- **`refetch`**:
+  Allows you to call the fetcher function manually with the
+  required arguments. The `FetcherOpts` with an abort signal is added to the
+  arguments automatically.
+- **`abort`**:
+  Allows you to abort the current fetcher call.
 
-Allows you to directly change the resource value.
+If the abort is performed with no reason or with an `AbortError` instance, the
+state is still considered pending/refreshing, the `resource.error` is not
+updated, and the `onError` callback is not called. Any other reason will
+result in an error state for the resource.
 
-**`refetch`**
-
-Allows you to call fetcher function manually with the required arguments.
-FetcherOpts with abort signal is added to arguments automatically.
-
-**`abort`**
-
-Allows you to abort the current fetcher call.
-
-If abort is performed with no reason, or with AbortError instance, then
-the state is still considered pending/refreshing, resource.error is
-not updated, and onError callback is not called.
-Any other reason will result in erorred resource state.
-
-Resource won't be refetched until deps change again.
+The resource will not be refetched until the dependencies change again.
 
 ##### useResourceOptions
 
-**`initial value`**
+The _useResource_ hook accepts several options to customize its behavior:
 
-If initial value is passed makes the initial state either ready or pending,
-depending on whether it was a sync value or a promise.
+- **`initial value`**:
+  The value (or a sync function resolving to this value), to be used as the
+  resource initial value. If an initial value is passed, it sets the initial
+  state to either "ready" or "refreshing" (depending on whether _skip_ or
+  _skipFirstRun_ opts are true or not.)
+- **`onCompleted`** and **`onError`**:
+  Callbacks that are called when the resource resolves or rejects respectively.
+- **`skip`**:
+  If set to true, it skips calls to the fetcher function, but it can still be
+  called manually with the _refresh_ function. This can be useful if you want
+  to wait for certain dependencies to be in a certain state before calling
+  the fetcher or if you want to trigger the fetcher only manually on some event.
+- **`skipFirstRun`**:
+  If set to true, it skips the first automatic trigger of the fetcher function.
+  It will be triggered only after the dependencies change.
+- **`skipFnMemoization`**:
+  If set to true, the fetcher function will not be memoized, and its change
+  will result in calls to it (the same way as if the dependencies array was
+  changed).
 
-**`onCompleted` and `onError`**
+To avoid flickering of content, the resource initial state depends on the _skip_
+and _skipFirstRun_ options. If any of them is true, the resource state will be
+"unresolved" or "ready" depending on whether the _initialValue_ is defined.
+If both of them are false, the resource state will be "pending" or "refreshing"
+correspondingly, so we can correctly show a preloader right away.
 
-callbacks can be passed to the hook to be called when resource resolves or
-rejects correspondingly.
-
-**`skip`**
-
-Skip calls of fetcher (can still be called manually with refresh)
-
-It can be useful if you're waiting for some of deps to be in certain state
-before calling the fetcher or if you want to trigger the fetcher only
-manually on some event.
-
-**`skipFirstRun`**
-
-enables you to skip first automatic trigger of fetcher function. It will be
-triggered only after deps change
-
-**`skipFnMemoization`**
-
-with this flag, fetcher function won't be memoized and its change will result
-in calls to it (the same way as if deps array was changed)
-
-If no initial value is provided to the useResource, and skip == false,
-skipFirstRun == false, resource is created with initial state `"pending"`
-(resource `loading` field === true), to avoid flickering of content.
-Otherwise, it's created with the `"unresolved"`.
-
-Currently, there's no plans of supporting Suspense. This possibility was
-investigated and abbandonded until the React team at least formally approves
-the usage of Suspense for anything else, besides components lazy loading.
-Implementation of Suspense support will require some global forms of promise
-cache and cahce busting, and most likely this implementation will come from
-the react itself, so it feels likke reinventing the wheel here.
+Currently, there are no plans to support Suspense. The possibility was
+investigated and abandoned until the React team at least formally approves the
+usage of Suspense for anything other than components lazy loading.
+Implementation of Suspense support will require some forms of global promise
+cache and cache busting, and most likely this implementation will come
+from React itself, so it feels like reinventing the wheel.
 
 If you really want to use suspended data fetches, there are some 3d party libs
 for that, if you want a recomendation, there's [suspend-react](https://github.com/pmndrs/suspend-react)

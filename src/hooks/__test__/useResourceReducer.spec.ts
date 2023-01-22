@@ -98,7 +98,10 @@ describe("useResourceReducer", () => {
     });
     const [ resource ] = result.current;
     expect(resource.error).toBeInstanceOf(NullishError);
-    expect(resource.error.cause).toBeNull();
+    // As error object doesn't have a cause field in node <= 14, don't test for that
+    if (process.version.slice(1).split('.')[0] > '14') {
+      expect(resource.error.cause).toBeNull();
+    }
   });
 
   it("does nothing  on wrong dispatch types", async () => {

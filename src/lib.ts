@@ -9,4 +9,5 @@ export { Await } from "./components/Await";
 
 export * from "./models/Resource";
 export { AbortError } from "./models/AbortError";
+export { NullishError } from "./models/NullishError";
 export { useResource } from "./hooks/useResource";

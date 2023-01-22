@@ -24,7 +24,7 @@ const Foo = () => {
 }
 ```
 
-or without the `Await` component, using axios library
+it works with any promise, and you don't have to use the Await component.
 
 ```tsx
 const Foo = () => {
@@ -95,5 +95,6 @@ const Foo = ({ externalSignal }: { externalSignal: AbortSignal }) => {
     },
     [externalSignal]
   );
+  // ...
 }
 ```
