@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Dynamic } from "../Dynamic";
 
@@ -32,5 +32,12 @@ describe("Dynamic component", () => {
     render(<Dynamic component="">test</Dynamic>);
     const items = screen.queryAllByText("test");
     expect(items.length).toBe(0);
+  });
+
+  it("passes forward the ref", () => {
+    const ref = vi.fn();
+    render(<Dynamic ref={ref} component="a">test</Dynamic>);
+    expect(ref).toBeCalledTimes(1);
+    expect(ref).toBeCalledWith(expect.any(HTMLAnchorElement));
   });
 });

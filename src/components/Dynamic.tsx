@@ -1,23 +1,33 @@
-import { createElement } from "react";
-import type { FunctionComponent, ComponentClass, PropsWithRef } from "react";
+import React, { forwardRef } from "react";
+import type { ComponentType, ReactElement, Ref, RefAttributes} from "react";
 
-type DynamicProps<T> = PropsWithRef<T> & {
+const genericForwardRef = forwardRef as any as (<T, P = {}>(
+  render: (props: P, ref: Ref<T>) => ReactElement | null
+) => ((props: P & RefAttributes<T>) => ReactElement | null));
+
+
+type DynamicProps<T> = T & {
   children?: any;
-  component?: FunctionComponent<T> | ComponentClass<T> | string | keyof JSX.IntrinsicElements;
+  component?: ComponentType<T> | string | keyof JSX.IntrinsicElements;
 }
 
 /** This component lets you insert an arbitrary Component or tag and passes
  * the props through to it.
  * For example, it can be usefull when you need to conditionally render
  * <a> or <span> */
-export function Dynamic<T extends {}>({
-  children,
-  component,
-  ...props
-}: DynamicProps<T>) {
-  if (!component) {
-    return null;
+export const Dynamic = genericForwardRef(
+  function Dynamic<T extends {}>(
+    {
+      component: Component,
+      ...props
+    }: DynamicProps<T>,
+    ref: Ref<unknown>
+  ): ReactElement | null {
+    if (!Component) {
+      return null;
+    }
+    return (
+      <Component {...props as any} ref={ref} />
+    );
   }
-  // TODO ref forwarding?
-  return createElement(component, props as any, children);
-}
+);

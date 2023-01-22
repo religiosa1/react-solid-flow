@@ -172,16 +172,13 @@ const [ resource ] = useResource(() => fetch(`/api/v1/employees`).then(r => sr.j
 #### Dynamic
 
 ```tsx
-type DynamicProps<T> = PropsWithRef<T> & {
-  children?: any;
-  component?: FunctionComponent<T> | ComponentClass<T> | string | keyof JSX.IntrinsicElements;
-}
-
-function Dynamic<T>({
-  children,
-  component,
-  ...props
-}: DynamicProps<T>): ReactElement | null;
+function Dynamic<T extends {}, TRef>(
+  props: T & {
+    ref?: Ref<TRef>;
+    children?: any;
+    component?: ComponentType<T> | string | keyof JSX.IntrinsicElements;
+  }
+): ReactElement | null;
 
 <Dynamic component={isLink ? "a" : "span"} {...someProps}>
   Maybe click me
