@@ -39,17 +39,6 @@ describe("useResource", () => {
       expect(result.current[0].state).toBe("ready");
     });
 
-    it("initially ready if initial value is provided", () => {
-      const { result } = renderHook(() => useResource(
-        fetcher,
-        [1],
-        { initialValue: 10 },
-      ));
-      const [ resource ] = result.current;
-      expect(resource.data).toBe(10);
-      expect(resource.state).toBe("refreshing");
-    });
-
     it("resolves sync if fetcher returns a non-promise value", async () => {
       const { result } = renderHook(() => useResource(
         () => 5,
@@ -237,7 +226,7 @@ describe("useResource", () => {
     });
 
     it("allows to manually call refetch when skip is supplied", async () => {
-      const { result, rerender } = renderHook((value) => useResource(
+      const { result } = renderHook((value) => useResource(
         fetcher,
         [value],
         { skip: true  }
@@ -251,6 +240,65 @@ describe("useResource", () => {
       const [ resource ] = result.current;
       expect(resource.data).toBe(2);
       expect(resource.state).toBe("ready");
+    });
+  });
+
+  describe("initial resource value", () => {
+    it("initially refreshing if initial value is provided, and no skip", () => {
+      const { result } = renderHook(() => useResource(
+        fetcher,
+        [1],
+        { initialValue: 10 },
+      ));
+      const [ resource ] = result.current;
+      expect(resource.data).toBe(10);
+      expect(resource.state).toBe("refreshing");
+    });
+
+    it("initially ready if initial value is provided and skip", () => {
+      const { result } = renderHook(() => useResource(
+        fetcher,
+        [1],
+        { initialValue: 10, skipFirstRun: true },
+      ));
+      const [ resource ] = result.current;
+      expect(resource.data).toBe(10);
+      expect(resource.state).toBe("ready");
+
+      const { result: resultAllSkip } = renderHook(() => useResource(
+        fetcher,
+        [1],
+        { initialValue: 10, skipFirstRun: true },
+      ));
+      const [ resourceAllSkip ] = resultAllSkip.current;
+      expect(resourceAllSkip.data).toBe(10);
+      expect(resourceAllSkip.state).toBe("ready");
+    });
+
+    it("creates resource with pending state, if no init value is provided and first run isn't skipped", () => {
+      const { result } = renderHook(() => useResource(
+        fetcher,
+        [1],
+      ));
+      expect(result.current[0].state).toBe("pending");
+    });
+
+    it("creates resource with unresolved state, if no init value is provided and first run is skipped", () => {
+      const { result } = renderHook(() => useResource(
+        fetcher,
+        [1],
+        { skipFirstRun: true }
+      ));
+      expect(result.current[0].state).toBe("unresolved");
+
+      const { result: resultAllSkip } = renderHook(() => useResource(
+        fetcher,
+        [1],
+        {
+          skip: true
+        }
+      ));
+      expect(resultAllSkip.current[0].state).toBe("unresolved");
     });
   });
 

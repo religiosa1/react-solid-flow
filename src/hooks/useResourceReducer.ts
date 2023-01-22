@@ -3,18 +3,23 @@ import { useReducer, Reducer} from "react";
 import { NullishError } from "../models/NullishError";
 
 export function useResourceReducer<T>(
-  initialValue?: Awaited<T> | (() => Awaited<T>)
+  initialValue?: Awaited<T> | (() => Awaited<T>),
+  skipFirstRun?: boolean
 ) {
   return useReducer(
     resourceReducer as Reducer<Resource<T>, Action<T>>,
-    initialValue,
+    [ initialValue, skipFirstRun ] as const,
     resourceInitializer,
   );
 }
 
-function resourceInitializer<T>(val?: Awaited<T> | (() => Awaited<T>)): Resource<T> {
+function resourceInitializer<T>(init: readonly [
+  val: Awaited<T> | (() => Awaited<T>) | undefined,
+  skip: boolean | undefined,
+]): Resource<T> {
+  const [ val, skip = false] = init;
   const value = val instanceof Function ? val() : val;
-  return Resource.from(value);
+  return Resource.from(value, !skip);
 }
 
 type Action<T> =

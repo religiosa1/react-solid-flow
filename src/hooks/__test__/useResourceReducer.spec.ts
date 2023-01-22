@@ -8,28 +8,28 @@ describe("useResourceReducer", () => {
   it("returns the initial state", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
     const [ resource, dispatch ] = result.current;
-    expect(resource.loading).toBe(false);
+    expect(resource.loading).toBe(true);
     expect(resource.data).toBeUndefined();
     expect(resource.error).toBeUndefined();
     expect(resource.latest).toBeUndefined();
-    expect(resource.state).toBe('unresolved');
+    expect(resource.state).toBe('pending');
     expect(dispatch).toBeInstanceOf(Function);
   });
 
   it("accepts static sync initializer", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>(true));
     const [ resource ] = result.current;
-    expect(resource.loading).toBe(false);
+    expect(resource.loading).toBe(true);
     expect(resource.data).toBe(true);
-    expect(resource.state).toBe('ready');
+    expect(resource.state).toBe('refreshing');
   });
 
   it("accepts defered sync initializer", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>(() => false));
     const [ resource ] = result.current;
-    expect(resource.loading).toBe(false);
+    expect(resource.loading).toBe(true);
     expect(resource.data).toBe(false);
-    expect(resource.state).toBe('ready');
+    expect(resource.state).toBe('refreshing');
   });
 
   it("allows to change state to pending", () => {

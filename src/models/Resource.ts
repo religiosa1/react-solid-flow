@@ -47,12 +47,13 @@ export class Resource<T> implements ResourceLike<T> {
     this.state = Resource.getState(this);
   }
 
-  static from<T>(data: Promise<T> | Awaited<T> | undefined): Resource<T> {
+  static from<T>(data: Promise<T> | Awaited<T> | undefined, pend?: boolean): Resource<T> {
     const isAsync = data instanceof Promise;
     return new Resource(isAsync ? {
       loading: true
     } : {
-      data
+      data,
+      loading: !!pend,
     });
   }
 

@@ -76,7 +76,7 @@ export function useResource<T, TArgs extends readonly any[]>(
   const controller = useRef<AbortController>();
   const skipFirst = useRef<boolean>(skipFirstRun);
 
-  const [ resource, dispatch ] = useResourceReducer(initialValue);
+  const [ resource, dispatch ] = useResourceReducer(initialValue, skip || skipFirstRun);
 
   const mutate = useCallback((val: Awaited<T>) => {
     controller.current?.abort();
