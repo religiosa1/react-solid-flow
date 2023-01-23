@@ -1,4 +1,4 @@
-# react-control-flow
+# react-solid-flow
 
 [SolidJS](https://www.solidjs.com/docs/latest/api#control-flow)-inspired
 basic control-flow components and everyday async state hook library for
@@ -22,7 +22,7 @@ display, Portals, ErrorBoundaries, fetching and displaying async data, etc.
 ## Installation
 
 ```sh
-npm install react-control-flow
+npm install react-solid-flow
 ```
 
 ## Usage
@@ -419,4 +419,4 @@ If you have any ideas or suggestions or want to report a bug, feel free to
 write in the issues section or create a PR.
 
 ## License
-react-control-flow is MIT licensed.
+react-solid-flow is MIT licensed.

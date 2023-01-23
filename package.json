@@ -1,11 +1,15 @@
 {
-  "name": "react-control-flow",
+  "name": "react-solid-flow",
   "version": "0.2.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest --run --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/religiosa1/react-solid-flow"
   },
   "peerDependencies": {
     "react": ">=16.8",
@@ -33,6 +37,7 @@
     "vitest": "^0.27.1"
   },
   "keywords": [
+    "react-solid-flow",
     "react-control-flow",
     "control-flow",
     "for",
@@ -58,13 +63,13 @@
     "use-fetch",
     "use-promise"
   ],
-  "main": "dist/react-control-flow.umd.js",
-  "es2015": "dist/react-control-flow.es.mjs",
-  "types": "dist/react-control-flow.es.d.ts",
+  "main": "dist/react-solid-flow.umd.js",
+  "es2015": "dist/react-solid-flow.es.mjs",
+  "types": "dist/react-solid-flow.es.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/react-control-flow.es.mjs",
-      "require": "./dist/react-control-flow.umd.js"
+      "import": "./dist/react-solid-flow.es.mjs",
+      "require": "./dist/react-solid-flow.umd.js"
     }
   }
 }
