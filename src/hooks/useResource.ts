@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Resource } from "../models/Resource";
 import { useResourceReducer } from "./useResourceReducer";
 
-export type ResourceReturn<T, TArgs extends readonly any[]> = [
+export type ResourceReturn<T, TArgs extends readonly unknown[]> = [
   Resource<T>,
   {
     /** Manually set the value.
@@ -89,8 +89,12 @@ export function useResource<T, TArgs extends readonly any[]>(
       let val: Promise<T> | T;
       const cont = controller.current;
       try {
+        // in theory, this error should never happen, but better be on the safe side
+        if (cont == null) {
+          throw new Error("resource state error, abort controller is null during the fetch operation");
+        }
         val = fetcher(...args, {
-          signal: cont?.signal!,
+          signal: cont.signal,
           refetching,
         });
         if (val instanceof Promise) {
@@ -166,7 +170,7 @@ export function useResource<T, TArgs extends readonly any[]>(
   return [ resource, { mutate, refetch, abort } ];
 }
 
-function isAbortError(e: any): boolean {
+function isAbortError(e: any): e is { name: "AbortError" } {
   // We can't really check if it's an instanceof DOMException as it doesn't
   // exist in older node version, and we can't check if it's an instanceof
   // Error, as jsdom implementation of DOMException isn't an instance of it.

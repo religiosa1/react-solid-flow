@@ -15,7 +15,7 @@ describe("useResource", () => {
     });
 
     it("correctly sets core data", () => {
-      let res = new Resource({
+      const res = new Resource({
         data: "test1",
         loading: true,
         error: "test2",
@@ -77,7 +77,7 @@ describe("useResource", () => {
     });
 
     it("creates a resource with async data", () => {
-      const res = Resource.from(new Promise(() => {}));
+      const res = Resource.from(Promise.resolve());
       expect(res).toEqual({
         data: undefined,
         loading: true,

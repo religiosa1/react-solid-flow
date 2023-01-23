@@ -1,6 +1,9 @@
 import React, { forwardRef } from "react";
 import type { ComponentType, ReactElement, Ref, RefAttributes} from "react";
 
+/* eslint-disable @typescript-eslint/ban-types */
+// as React types use {} we also use that.
+
 const genericForwardRef = forwardRef as any as (<T, P = {}>(
   render: (props: P, ref: Ref<T>) => ReactElement | null
 ) => ((props: P & RefAttributes<T>) => ReactElement | null));

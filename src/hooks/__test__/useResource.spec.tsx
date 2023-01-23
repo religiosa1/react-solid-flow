@@ -308,7 +308,7 @@ describe("useResource", () => {
         fetcher,
         [3]
       ));
-      const [_, controls] = result.current;
+      const [, controls] = result.current;
       await act(() => controls.mutate(5));
       const [ resource ] = result.current;
       expect(resource.data).toBe(5);
@@ -321,7 +321,7 @@ describe("useResource", () => {
         [3]
       ));
       await act(() => vi.advanceTimersToNextTimer());
-      const [_, controls] = result.current;
+      const [, controls] = result.current;
       await act(async () => {
         const prms = controls.refetch(10);
         vi.advanceTimersToNextTimer();
@@ -342,7 +342,7 @@ describe("useResource", () => {
         [],
         { skipFirstRun: true }
       ));
-      const [_, controls] = result.current;
+      const [, controls] = result.current;
 
       act(() => {
         expect(() => controls.refetch()).toThrow("test");

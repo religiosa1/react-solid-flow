@@ -8,6 +8,11 @@ module.exports = {
         "plugin:react/recommended",
         "plugin:@typescript-eslint/recommended"
     ],
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaFeatures": {
@@ -20,6 +25,10 @@ module.exports = {
         "react",
         "@typescript-eslint"
     ],
+    "ignorePatterns": [".eslintrc.js", "dist/**/*"],
     "rules": {
+        "@typescript-eslint/no-non-null-assertion": "off",
+        // we have a lot of any to be compatible with Solid api, where they're also used
+        "@typescript-eslint/no-explicit-any": "off",
     }
 }

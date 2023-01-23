@@ -24,7 +24,7 @@ describe("Dynamic component", () => {
 
   it("correctly gets possible proptypes", () => {
     const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>
-    //@ts-expect-error
+    //@ts-expect-error wrong prop name "comt" instead of "cont"
     render(<Dynamic component={Comp} comt="test" />);
   });
 

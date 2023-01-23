@@ -67,7 +67,7 @@ describe("ErrorBoundary component", () => {
   });
 
   it("calls onCatch cb with error info", () => {
-    const onCatch = vi.fn((err) => {});
+    const onCatch = vi.fn();
     render((
       <ErrorBoundary onCatch={onCatch} fallback="test">
         <Thrower>

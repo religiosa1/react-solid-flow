@@ -21,7 +21,7 @@ export function pause(timeout: number, { signal }: PauseOpts = {}) {
         clearTimeout(to);
       }
       rej(this.reason)
-    };
+    }
 
     if (signal?.addEventListener instanceof Function) {
       signal.addEventListener("abort", abortHandler, { once: true });

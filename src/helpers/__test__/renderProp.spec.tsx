@@ -18,7 +18,7 @@ describe("renderProp helper", () => {
 
   it("passes supplied arguments to the render prop function", () => {
     const f = vi.fn((val: number, val2: number) => <span>{val + val2}</span>);
-    const result = renderProp(f, 2, 3);
+    renderProp(f, 2, 3);
     expect(f).toBeCalledWith(2, 3);
   });
 });

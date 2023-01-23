@@ -5,7 +5,7 @@ export interface ResourceLike<T> {
   /** Resolved resource data for sync access */
   data: Awaited<T> | undefined;
   /** Rejected resource error */
-  error: any;
+  error: unknown;
 }
 
 export type ResourceState = "unresolved" | "pending" | "ready" | "refreshing" | "errored";
@@ -13,7 +13,7 @@ export type ResourceState = "unresolved" | "pending" | "ready" | "refreshing" | 
 export class Resource<T> implements ResourceLike<T> {
   loading: boolean;
   data: Awaited<T> | undefined;
-  error: any;
+  error: unknown;
 
   /** State name
    *
@@ -71,7 +71,7 @@ export class Resource<T> implements ResourceLike<T> {
    * Values marked with * are expected to equal the specified value,
    * but actually ignored, when determining the status.
    */
-  static getState(r: ResourceLike<any>): ResourceState {
+  static getState(r: ResourceLike<unknown>): ResourceState {
     if (r.data !== undefined && r.loading) {
       return "refreshing";
     }

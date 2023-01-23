@@ -6,7 +6,7 @@ export class AbortError extends Error {
   readonly name = "AbortError" as const;
   readonly code = 20 as const;
 
-  constructor(message: string = "The operation was aborted.") {
+  constructor(message = "The operation was aborted.") {
     super(message);
   }
 }

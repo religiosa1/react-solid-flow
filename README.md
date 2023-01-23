@@ -140,7 +140,7 @@ re-render of _children_ after that.
 export interface ResourceLike<T> {
   loading?: boolean;
   data: Awaited<T> | undefined;
-  error: any;
+  error: unknown;
 }
 
 function Await<T>(props: {
@@ -288,13 +288,13 @@ interface FetcherOpts {
 class Resource<T> implements ResourceLike<T> {
   loading: boolean;
   data: Awaited<T> | undefined;
-  error: any;
+  error: unknown;
   latest: Awaited<T> | undefined;
   state: ResourceState;
 
   constructor(init?: Partial<ResourceLike<T>>, previous?: { latest?: Awaited<T> });
   static from<T>(data: Promise<T> | Awaited<T> | undefined): Resource<T>;
-  static getState(r: ResourceLike<any>): ResourceState;
+  static getState(r: ResourceLike<unknown>): ResourceState;
 }
 
 type ResourceState = "unresolved" | "pending" | "ready" | "refreshing" | "errored";
