@@ -180,13 +180,19 @@ function Dynamic<T extends {}, TRef>(
   }
 ): ReactElement | null;
 
-<Dynamic component={isLink ? "a" : "span"} {...someProps}>
+<Dynamic component={isLink ? "a" : "span"} title="Foo" {...someOtherProps}>
   Maybe click me
 </Dynamic>
 ```
 
 This component allows you to insert an arbitrary component or tag and pass props
 to it (excluding the _component_ prop).
+
+Props are controlled by Typescript for Components, but not JSX intrinsic
+elements (such as "span", "div", etc.).
+
+You can pass a ref to the target component. It's type won't be inferred
+automatically. so you need to type it.
 
 #### Portal
 
