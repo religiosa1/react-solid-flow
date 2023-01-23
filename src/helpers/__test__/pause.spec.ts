@@ -18,7 +18,7 @@ describe("pause", () => {
 
   it("aborts with the correct error.name", async () => {
     const controller = new AbortController();
-    const prms = pause(t, { signal: controller.signal })
+    const prms = pause(t, { signal: controller.signal });
     controller.abort();
     await expect(prms).rejects.toMatchObject({ name: "AbortError" });
   });

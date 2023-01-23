@@ -8,7 +8,7 @@ import { pause } from "../../helpers/pause";
 const t = 5;
 const fetcher = vi.fn(async(
   item: number,
-  opts: { signal: AbortSignal }
+  opts: { signal: AbortSignal },
 ) => {
   await pause(t, opts);
   return item;
@@ -85,7 +85,7 @@ describe("useResource", () => {
         [],
       ), { initialProps: fn1 });
       expect(fn1).toBeCalled();
-      const fn2 = vi.fn(() => 2)
+      const fn2 = vi.fn(() => 2);
       act(() => rerender(fn2));
       const [resource] = result.current;
       expect(resource.data).toBe(1);
@@ -97,10 +97,10 @@ describe("useResource", () => {
       const { result, rerender } = renderHook((f: () => number) => useResource(
         f,
         [],
-        { skipFnMemoization: true }
+        { skipFnMemoization: true },
       ), { initialProps: fn1 });
       expect(fn1).toBeCalled();
-      const fn2 = vi.fn(() => 2)
+      const fn2 = vi.fn(() => 2);
       act(() => rerender(fn2));
       const [resource] = result.current;
       expect(resource.data).toBe(2);
@@ -111,7 +111,7 @@ describe("useResource", () => {
       const { rerender } = renderHook((a: number) => useResource(
         fetcher,
         [a],
-        { skipFirstRun: true }
+        { skipFirstRun: true },
       ), { initialProps: 1 });
       vi.advanceTimersToNextTimer();
       expect(fetcher).not.toBeCalled();
@@ -130,7 +130,7 @@ describe("useResource", () => {
       });
       const { rerender } = renderHook((v) => useResource(
         fetcher,
-        [v]
+        [v],
       ), { initialProps: 1 });
       act(() => rerender(2));
       await act(() => vi.advanceTimersByTime(3*t));
@@ -148,7 +148,7 @@ describe("useResource", () => {
       }
       const { result, rerender } = renderHook((v) => useResource(
         fetcher,
-        [v]
+        [v],
       ), { initialProps: 1 });
       rerender(2);
       await act(() => vi.advanceTimersByTime(4*t));
@@ -167,7 +167,7 @@ describe("useResource", () => {
 
       const { unmount } = renderHook(() => useResource(
         fetcher,
-        []
+        [],
       ));
       unmount();
       expect(handler).toBeCalledTimes(1);
@@ -180,7 +180,7 @@ describe("useResource", () => {
       renderHook(() => useResource(
         fetcher,
         [1],
-        { onCompleted }
+        { onCompleted },
       ));
       await act(() => vi.advanceTimersToNextTimer());
       expect(onCompleted).toBeCalledTimes(1);
@@ -196,7 +196,7 @@ describe("useResource", () => {
           throw err;
         },
         [],
-        { onError }
+        { onError },
       ));
       try {
         await act(() => vi.advanceTimersToNextTimer());
@@ -210,7 +210,7 @@ describe("useResource", () => {
       const { result, rerender } = renderHook(([skip, value]) => useResource(
         fetcher,
         [value],
-        { skip }
+        { skip },
       ), { initialProps: [ true, 1 ] as [ boolean, number ] });
       const [ resource ] = result.current;
       expect(resource.data).toBeUndefined();
@@ -229,7 +229,7 @@ describe("useResource", () => {
       const { result } = renderHook((value) => useResource(
         fetcher,
         [value],
-        { skip: true  }
+        { skip: true  },
       ), { initialProps: 1 });
       const [ , controls ] = result.current;
       await act(async () => {
@@ -287,7 +287,7 @@ describe("useResource", () => {
       const { result } = renderHook(() => useResource(
         fetcher,
         [1],
-        { skipFirstRun: true }
+        { skipFirstRun: true },
       ));
       expect(result.current[0].state).toBe("unresolved");
 
@@ -295,8 +295,8 @@ describe("useResource", () => {
         fetcher,
         [1],
         {
-          skip: true
-        }
+          skip: true,
+        },
       ));
       expect(resultAllSkip.current[0].state).toBe("unresolved");
     });
@@ -306,7 +306,7 @@ describe("useResource", () => {
     it("allows to modify data directly", async () => {
       const { result } = renderHook(() => useResource(
         fetcher,
-        [3]
+        [3],
       ));
       const [, controls] = result.current;
       await act(() => controls.mutate(5));
@@ -318,7 +318,7 @@ describe("useResource", () => {
     it("allows to refetch the data", async () => {
       const { result } = renderHook(() => useResource(
         fetcher,
-        [3]
+        [3],
       ));
       await act(() => vi.advanceTimersToNextTimer());
       const [, controls] = result.current;
@@ -333,14 +333,14 @@ describe("useResource", () => {
       expect(fetcher).toHaveBeenLastCalledWith(10, expect.objectContaining({
         signal: expect.any(AbortSignal),
         refetching: true,
-      }))
+      }));
     });
 
     it("throws syncronous refetch error", () => {
       const { result } = renderHook(() => useResource(
         () => { throw new Error("test") },
         [],
-        { skipFirstRun: true }
+        { skipFirstRun: true },
       ));
       const [, controls] = result.current;
 

@@ -71,7 +71,7 @@ describe("useResource", () => {
         loading: false,
         error: undefined,
         latest: "test",
-        state: "ready"
+        state: "ready",
       });
       expect(res).toBeInstanceOf(Resource);
     });

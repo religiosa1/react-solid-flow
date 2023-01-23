@@ -11,19 +11,19 @@ describe("Dynamic component", () => {
   });
 
   it("provides properties to the html tag", () => {
-    render(<Dynamic component="a" title="asdf">test</Dynamic>)
+    render(<Dynamic component="a" title="asdf">test</Dynamic>);
     const item = screen.getByText("test") as HTMLAnchorElement;
     expect(item.title).toBe("asdf");
   });
 
   it("renders supplied components", () => {
-    const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>
+    const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>;
     render(<Dynamic component={Comp} cont="test" />);
     expect(screen.getByText("test")).toBeDefined();
   });
 
   it("correctly gets possible proptypes", () => {
-    const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>
+    const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>;
     //@ts-expect-error wrong prop name "comt" instead of "cont"
     render(<Dynamic component={Comp} comt="test" />);
   });

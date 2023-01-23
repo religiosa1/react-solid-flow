@@ -24,7 +24,7 @@ export const Dynamic = genericForwardRef(
       component: Component,
       ...props
     }: DynamicProps<T>,
-    ref: Ref<unknown>
+    ref: Ref<unknown>,
   ): ReactElement | null {
     if (!Component) {
       return null;
@@ -32,5 +32,5 @@ export const Dynamic = genericForwardRef(
     return (
       <Component {...props as any} ref={ref} />
     );
-  }
+  },
 );

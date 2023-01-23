@@ -12,7 +12,7 @@ describe("nodeToElement helper", () => {
   });
 
   it("return original element, if it's an element", () => {
-    const span = <span />
+    const span = <span />;
     const result = nodeToElement(span);
     expect(result).toBe(span);
   });

@@ -1,4 +1,4 @@
-import { ReactNode, ReactPortal } from "react"
+import { ReactNode, ReactPortal } from "react";
 import { createPortal } from "react-dom";
 
 interface PortalProps {

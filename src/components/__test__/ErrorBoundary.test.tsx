@@ -17,10 +17,10 @@ describe("ErrorBoundary component", () => {
   const errorMute = (e: ErrorEvent) => e.message === "test error" && e.preventDefault();
 
   beforeEach(() => {
-    window.addEventListener('error', errorMute);
+    window.addEventListener("error", errorMute);
   });
   afterEach(() => {
-    window.removeEventListener('error', errorMute);
+    window.removeEventListener("error", errorMute);
   });
 
   it("catches an error down the hier tree and displays fallback", () => {
@@ -38,7 +38,7 @@ describe("ErrorBoundary component", () => {
   it("renders children if no error happened", () => {
     render((
       <ErrorBoundary fallback="test">
-          fail
+        fail
       </ErrorBoundary>
     ));
     expect(screen.queryAllByText("test").length).toBe(0);
@@ -77,6 +77,6 @@ describe("ErrorBoundary component", () => {
     ));
 
     expect(onCatch).toBeCalledTimes(1);
-    expect(onCatch.mock.calls[0][0].message).toBe("test error")
+    expect(onCatch.mock.calls[0][0].message).toBe("test error");
   });
 });

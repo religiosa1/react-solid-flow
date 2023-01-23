@@ -20,7 +20,7 @@ export function pause(timeout: number, { signal }: PauseOpts = {}) {
       if (to) {
         clearTimeout(to);
       }
-      rej(this.reason)
+      rej(this.reason);
     }
 
     if (signal?.addEventListener instanceof Function) {

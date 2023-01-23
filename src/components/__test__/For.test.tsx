@@ -10,7 +10,7 @@ describe("For component", () => {
         {(i) => <h1>{i}</h1>}
       </For>
     ));
-    const items = screen.queryAllByRole('heading');
+    const items = screen.queryAllByRole("heading");
     expect(items[0]).toHaveTextContent("1");
     expect(items[1]).toHaveTextContent("2");
     expect(items[2]).toHaveTextContent("3");
@@ -23,7 +23,7 @@ describe("For component", () => {
         {(i) => <h1>{i}</h1>}
       </For>
     ));
-    const items = screen.queryAllByRole('heading');
+    const items = screen.queryAllByRole("heading");
     expect(items[0]).toHaveTextContent("hi mom");
     expect(items.length).toBe(1);
   });
@@ -34,7 +34,7 @@ describe("For component", () => {
         {(i: any) => <h1>{i}</h1>}
       </For>
     ));
-    const items = screen.queryAllByRole('heading');
+    const items = screen.queryAllByRole("heading");
     expect(items[0]).toHaveTextContent("hi mom");
     expect(items.length).toBe(1);
   });
@@ -52,7 +52,7 @@ describe("For component", () => {
       </For>
     ));
     expect(screen.queryAllByText(/^test\d$/).length).toBe(3);
-  })
+  });
 
   it("renders static node required amount of times", () => {
     render((
@@ -60,7 +60,7 @@ describe("For component", () => {
         <h1>hi mom</h1>
       </For>
     ));
-    const items = screen.queryAllByText('hi mom');
+    const items = screen.queryAllByText("hi mom");
     expect(items.length).toBe(3);
   });
 

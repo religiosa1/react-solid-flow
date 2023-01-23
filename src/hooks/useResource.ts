@@ -26,7 +26,7 @@ export type ResourceReturn<T, TArgs extends readonly unknown[]> = [
      * Resource won't be refetched untill deps change again.
      */
     abort: (reason?: any) => void;
-  }
+  },
 ];
 
 export type ResourceOptions<T> = {
@@ -69,7 +69,7 @@ export function useResource<T, TArgs extends readonly any[]>(
     skipFirstRun = false,
     skip = false,
     skipFnMemoization,
-  }: ResourceOptions<T> = {}
+  }: ResourceOptions<T> = {},
 ): ResourceReturn<T, TArgs> {
   // it's actually initialized in the effect bellow, so we don't create empty controllers
   // on each render
@@ -81,7 +81,7 @@ export function useResource<T, TArgs extends readonly any[]>(
   const mutate = useCallback((val: Awaited<T>) => {
     controller.current?.abort();
     controller.current = new AbortController();
-    dispatch({ type: "SYNC-RESULT", payload: val })
+    dispatch({ type: "SYNC-RESULT", payload: val });
   }, [dispatch]);
 
   const fetcherFn = useCallback(
@@ -118,18 +118,18 @@ export function useResource<T, TArgs extends readonly any[]>(
           // As fetcher can completely ignore AbortController we're checking
           // for race conditions separately, by checking that AbortController
           // instance hasn't changed between calls.
-          if (cont !== controller.current) { return; }
+          if (cont !== controller.current) { return }
           dispatch({ type: "RESOLVE", payload: result });
           onCompleted?.(result);
         } catch (e) {
-          if (isAbortError(e)) { return; }
-          if (cont !== controller.current) { return; }
+          if (isAbortError(e)) { return }
+          if (cont !== controller.current) { return }
           dispatch({ type: "REJECT", payload: e });
           onError?.(e);
         }
       }
     },
-    skipFnMemoization ? [ fetcher ] : []
+    skipFnMemoization ? [ fetcher ] : [],
   );
 
   const refetch = useCallback((...args: TArgs) => {
@@ -162,9 +162,9 @@ export function useResource<T, TArgs extends readonly any[]>(
     return () => {
       controller.current?.abort();
       controller.current = new AbortController();
-    }
-  // onCompleted and onError are intentionally ommited, as we don't want to
-  // retrigger the fetching, if someone forgot to memoize it
+    };
+    // onCompleted and onError are intentionally ommited, as we don't want to
+    // retrigger the fetching, if someone forgot to memoize it
   }, [ ...deps, skip, fetcherFn ]);
 
   return [ resource, { mutate, refetch, abort } ];

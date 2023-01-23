@@ -4,14 +4,14 @@ import { renderProp } from "../renderProp";
 
 describe("renderProp helper", () => {
   it("returns render prop call result if it's a function", () => {
-    const span = <span>123</span>
+    const span = <span>123</span>;
     const f = vi.fn(() => span);
     const result = renderProp(f);
     expect(result).toBe(span);
   });
 
   it("calls render props as-is if it is not a function", () => {
-    const span = <span>123</span>
+    const span = <span>123</span>;
     const result = renderProp(span);
     expect(result).toBe(span);
   });

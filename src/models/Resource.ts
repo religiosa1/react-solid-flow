@@ -50,7 +50,7 @@ export class Resource<T> implements ResourceLike<T> {
   static from<T>(data: Promise<T> | Awaited<T> | undefined, pend?: boolean): Resource<T> {
     const isAsync = data instanceof Promise;
     return new Resource(isAsync ? {
-      loading: true
+      loading: true,
     } : {
       data,
       loading: !!pend,
