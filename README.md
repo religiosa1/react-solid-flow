@@ -10,7 +10,7 @@ display, Portals, ErrorBoundaries, fetching and displaying async data, etc.
 - Native Typescript support
 - Lightweight: (5kb minified UMD, 2.5kb gzip), tree-shakable,
 - Zero third-party dependencies, except React and React-DOM
-- Modern: React 16.8+ .. 18.x, no legacy APIs or weird hacks
+- Modern: React 16.14+ .. 18.x, no legacy APIs or weird hacks
 - Fully tested
 - Easy to use
 - Hooks and components for performing async operations, handling cancellations,
