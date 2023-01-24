@@ -1,6 +1,6 @@
 {
   "name": "react-solid-flow",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
@@ -14,8 +14,8 @@
     "url": "https://github.com/religiosa1/react-solid-flow"
   },
   "peerDependencies": {
-    "react": ">=16.14",
-    "react-dom": ">=16.14"
+    "react": ">=16.8",
+    "react-dom": ">=16.8"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",

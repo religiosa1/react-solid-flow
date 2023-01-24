@@ -8,7 +8,9 @@ import dts from "vite-plugin-dts";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: "classic",
+    }),
     dts({ insertTypesEntry: true }),
   ],
   test: {
@@ -26,13 +28,11 @@ export default defineConfig({
     rollupOptions: {
       external: [
         "react",
-        "react/jsx-runtime",
         "react-dom",
       ],
       output: {
         globals: {
           react: "React",
-          "react/jsx-runtime": "jsxRuntime",
           "react-dom": "ReactDOM",
         },
       },
