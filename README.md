@@ -37,6 +37,10 @@ function For<T, U extends ReactNode>(props: {
   children: ReactNode | ((item: T, idx: number) => U);
   fallback?: ReactNode;
 }): ReactElement | null;
+```
+
+```tsx
+import { For } from "react-solid-flow";
 
 <For each={collection} fallback="list is empty!">
   {(i) => <li key={i.id}>{i.name}</li>}
@@ -64,6 +68,10 @@ function Show<T>(props: {
   children: ReactNode | ((item: NonNullable<T>) => ReactNode);
   fallback?: ReactNode;
 }): ReactElement | null;
+```
+
+```tsx
+import { Show } from "react-solid-flow";
 
 <Show when={parentSeen === 'mom'} fallback={<h3>nevermind...</h3>}>
   <h2>Hi mom!</h2>
@@ -84,6 +92,10 @@ function Match<T>(props: {
   when: T | undefined | null | false;
   children?: ReactNode | ((item: T) => ReactNode);
 }): ReactElement | null;
+```
+
+```tsx
+import { Switch, Match } from "react-solid-flow";
 
 <Switch fallback={<h3>nevermind...</h3>}>
   <Match when={parentSeen === "mom"}>
@@ -112,6 +124,10 @@ class ErrorBoundary extends Component<{
   children?: ReactNode;
   onCatch?: (error: unknown, errorInfo: unknown) => void;
 }> {}
+```
+
+```tsx
+import { ErrorBoundary } from "react-solid-flow";
 
 <ErrorBoundary fallback={(err, reset) => (
   <div className="panel-danger">
@@ -157,6 +173,7 @@ object that conforms to the required interface (such as responses from
 the Apollo Client).
 
 ```tsx
+import { Await, useResource } from "react-solid-flow";
 // See description of useResource hook bellow.
 const [ resource ] = useResource(() => fetch(`/api/v1/employees`).then(r => sr.json()));
 
@@ -179,6 +196,9 @@ function Dynamic<T extends {}, TRef>(
     component?: ComponentType<T> | string | keyof JSX.IntrinsicElements;
   }
 ): ReactElement | null;
+```
+```tsx
+import { Dynamic } from "react-solid-flow";
 
 <Dynamic component={isLink ? "a" : "span"} title="Foo" {...someOtherProps}>
   Maybe click me
@@ -201,6 +221,10 @@ function Portal(props: {
   mount?: Element | DocumentFragment | string;
   children?: ReactNode;
 }): ReactPortal | null;
+```
+
+```tsx
+import { Portal } from "react-solid-flow";
 
 <Portal mount="#modal-container-id">
   <dialog>
@@ -228,6 +252,8 @@ The `useResource` hook creates a Resource object that reflects the result of an
 asynchronous request performed by the fetcher function.
 
 ```tsx
+import { useResource } from "react-solid-flow";
+
 const [{ data, error, loading }] = useResouce(
   (id, { signal }) => fetch(`/api/v1/employee/${id}`, { signal }).json(r => {
     if (!response.ok) {
