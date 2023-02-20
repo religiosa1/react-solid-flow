@@ -18,7 +18,7 @@ function resourceInitializer<T>(init: readonly [
 	skip: boolean | undefined,
 ]): Resource<T> {
   const [ val, skip = false] = init;
-  const value = val instanceof Function ? val() : val;
+  const value = (typeof val === "function") ? (val as () => Awaited<T>)() : val;
   return Resource.from(value, !skip);
 }
 

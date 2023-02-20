@@ -10,7 +10,7 @@ interface PauseOpts {
 export function pause(timeout: number, { signal }: PauseOpts = {}) {
   return new Promise<void>((res, rej) => {
     const to = setTimeout(() => {
-      if (signal?.removeEventListener instanceof Function) {
+      if (typeof signal?.removeEventListener === "function") {
         signal.removeEventListener("abort", abortHandler);
       }
       res();
@@ -23,7 +23,7 @@ export function pause(timeout: number, { signal }: PauseOpts = {}) {
       rej(this.reason);
     }
 
-    if (signal?.addEventListener instanceof Function) {
+    if (typeof signal?.addEventListener === "function") {
       signal.addEventListener("abort", abortHandler, { once: true });
     }
   });

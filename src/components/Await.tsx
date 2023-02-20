@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactElement, ReactNode } from "react";
 import { ResourceLike } from "../models/Resource";
 import { renderProp } from "../helpers/renderProp";
 
@@ -14,7 +14,7 @@ interface AwaitProps<T> {
 }
 
 /** Component for displaying a Resource */
-export function Await<T>(props: AwaitProps<T>) {
+export function Await<T>(props: AwaitProps<T>): ReactElement | null {
   if (props.for.loading) {
     return renderProp(props.fallback);
   }

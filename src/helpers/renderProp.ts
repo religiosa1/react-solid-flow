@@ -5,7 +5,7 @@ export function renderProp<TArgs extends ReadonlyArray<unknown>>(
   prop: ((...args: TArgs) => ReactNode) | ReactNode,
   ...args: TArgs
 ): ReactElement | null {
-  if (prop instanceof Function) {
+  if (typeof prop === "function") {
     return nodeToElement(prop(...args));
   }
   return nodeToElement(prop);
