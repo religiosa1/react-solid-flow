@@ -12,9 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<Match />` narrows down renderProp type to non-nullable values
 ### Changed
 - `<Await />` now renders nothing instead of throwing an error, if nullish `for` prop was supplied
+- default module format switched from cjs to mjs
+- builder changed from vite to tsup
 - exports declaration was changed for better cjs/mjs support
 - stricter internal dispatch checkings in useResource
 - documentation and changelog typos, wordings and better examples
+- source code is ommited from the npm bundle
+### Security
+- devDependencies bump
 
 ## [0.2.3] - 2023-02-20
 ### Changed
