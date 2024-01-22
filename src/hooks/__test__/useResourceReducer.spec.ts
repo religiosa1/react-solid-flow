@@ -7,7 +7,7 @@ import { NullishError } from "../../models/NullishError";
 describe("useResourceReducer", () => {
   it("returns the initial state", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ resource, dispatch ] = result.current;
+    const [resource, dispatch] = result.current;
     expect(resource.loading).toBe(true);
     expect(resource.data).toBeUndefined();
     expect(resource.error).toBeUndefined();
@@ -18,7 +18,7 @@ describe("useResourceReducer", () => {
 
   it("accepts static sync initializer", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>(true));
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     expect(resource.loading).toBe(true);
     expect(resource.data).toBe(true);
     expect(resource.state).toBe("refreshing");
@@ -26,7 +26,7 @@ describe("useResourceReducer", () => {
 
   it("accepts defered sync initializer", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>(() => false));
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     expect(resource.loading).toBe(true);
     expect(resource.data).toBe(false);
     expect(resource.state).toBe("refreshing");
@@ -34,9 +34,9 @@ describe("useResourceReducer", () => {
 
   it("allows to change state to pending", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ , dispatch ] = result.current;
+    const [, dispatch] = result.current;
     act(() => dispatch({ type: "PEND" }));
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     expect(resource.loading).toBe(true);
     expect(resource.data).toBeUndefined();
     expect(resource.error).toBeUndefined();
@@ -46,12 +46,12 @@ describe("useResourceReducer", () => {
 
   it("allows to resolve pending state", async () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ , dispatch ] = result.current;
+    const [, dispatch] = result.current;
     act(() => {
       dispatch({ type: "PEND" });
       dispatch({ type: "RESOLVE", payload: true });
     });
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     expect(resource.loading).toBe(false);
     expect(resource.data).toBe(true);
     expect(resource.error).toBeUndefined();
@@ -61,13 +61,13 @@ describe("useResourceReducer", () => {
 
   it("'ready' -> 'refreshing' by the next 'PEND' call", () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ , dispatch ] = result.current;
+    const [, dispatch] = result.current;
     act(() => {
       dispatch({ type: "PEND" });
       dispatch({ type: "RESOLVE", payload: true });
       dispatch({ type: "PEND" });
     });
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     expect(resource.loading).toBe(true);
     expect(resource.data).toBe(true);
     expect(resource.error).toBeUndefined();
@@ -77,12 +77,12 @@ describe("useResourceReducer", () => {
 
   it("allows to reject pending state", async () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ , dispatch ] = result.current;
+    const [, dispatch] = result.current;
     act(() => {
       dispatch({ type: "PEND" });
       dispatch({ type: "REJECT", payload: true });
     });
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     expect(resource.loading).toBe(false);
     expect(resource.data).toBeUndefined();
     expect(resource.error).toBe(true);
@@ -92,11 +92,11 @@ describe("useResourceReducer", () => {
 
   it("puts a special error type into Error on nullish rejects", async () => {
     const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ , dispatch ] = result.current;
+    const [, dispatch] = result.current;
     act(() => {
       dispatch({ type: "REJECT", payload: null });
     });
-    const [ resource ] = result.current;
+    const [resource] = result.current;
     const { error } = resource;
     expect(error).toBeInstanceOf(NullishError);
     // As error object doesn't have a cause field in node <= 14, don't test for that
@@ -105,15 +105,19 @@ describe("useResourceReducer", () => {
     }
   });
 
-  it("does nothing  on wrong dispatch types", async () => {
-    const { result } = renderHook(() => useResourceReducer<boolean>());
-    const [ , dispatch ] = result.current;
-    const [ initial ] = result.current;
-    act(() => {
-      //@ts-expect-error fake dispatch
-      dispatch({ type: "FAKE", payload: true });
-    });
-    const [ resource ] = result.current;
-    expect(resource).toBe(initial);
+  it("throws an error on wrong dispatch types", async () => {
+    const { result } = renderHook(() => useResourceReducer<boolean>(true));
+    const [, dispatch] = result.current;
+
+    try {
+      await act(() => {
+        //@ts-expect-error bad dispatch
+        dispatch({ type: "FAKE", payload: true });
+      });
+      throw new Error("unreachable");
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error);
+      expect((e as Error).message).toBe("Invalid action type");
+    }
   });
 });

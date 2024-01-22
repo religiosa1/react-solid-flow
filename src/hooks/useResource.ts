@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { Resource } from "../models/Resource";
 import { useResourceReducer } from "./useResourceReducer";
+import type { Resource } from "../models/Resource";
+import type { Initializer } from "../models/Initializer";
 
 export type ResourceReturn<T, TArgs extends readonly unknown[]> = [
   Resource<T>,
@@ -31,7 +32,7 @@ export type ResourceReturn<T, TArgs extends readonly unknown[]> = [
 
 export type ResourceOptions<T> = {
   /** Initial value for the resource */
-  initialValue?: Awaited<T> | (() => Awaited<T>);
+  initialValue?: Initializer<Awaited<T>>;
   /** resolve callback */
   onCompleted?: (data: Awaited<T>) => void;
   /** rejection callback */
@@ -59,8 +60,8 @@ export interface FetcherOpts {
 
 export function useResource<T, TArgs extends readonly any[]>(
   fetcher:
-    | ((...args: [ ...TArgs, FetcherOpts ]) => Promise<T> | T)
-    | ((...args: [ ...TArgs ]) => Promise<T> | T),
+    | ((...args: [...TArgs, FetcherOpts]) => Promise<T> | T)
+    | ((...args: TArgs) => Promise<T> | T),
   deps: [...TArgs] = [] as unknown as [...TArgs],
   {
     initialValue,
@@ -76,7 +77,7 @@ export function useResource<T, TArgs extends readonly any[]>(
   const controller = useRef<AbortController>();
   const skipFirst = useRef<boolean>(skipFirstRun);
 
-  const [ resource, dispatch ] = useResourceReducer(initialValue, skip || skipFirstRun);
+  const [resource, dispatch] = useResourceReducer(initialValue, skip || skipFirstRun);
 
   const mutate = useCallback((val: Awaited<T>) => {
     controller.current?.abort();
@@ -85,7 +86,7 @@ export function useResource<T, TArgs extends readonly any[]>(
   }, [dispatch]);
 
   const fetcherFn = useCallback(
-    (refetching: boolean, ...args: [ ...TArgs ]): T | Promise<T> => {
+    (refetching: boolean, ...args: [...TArgs]): T | Promise<T> => {
       let val: Promise<T> | T;
       const cont = controller.current;
       try {
@@ -93,18 +94,18 @@ export function useResource<T, TArgs extends readonly any[]>(
         if (cont == null) {
           throw new Error("resource state error, abort controller is null during the fetch operation");
         }
-        val = fetcher(...args, {
+        val = fetcher(...[...args, {
           signal: cont.signal,
           refetching,
-        });
+        }] as unknown as TArgs);
         if (val instanceof Promise) {
           handler(val);
         } else {
-          dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T>});
+          dispatch({ type: "SYNC-RESULT", payload: val as Awaited<T> });
         }
         return val;
-      } catch(e) {
-        dispatch({type: "REJECT", payload: e});
+      } catch (e) {
+        dispatch({ type: "REJECT", payload: e });
         if (refetching) {
           throw e;
         }
@@ -129,7 +130,7 @@ export function useResource<T, TArgs extends readonly any[]>(
         }
       }
     },
-    skipFnMemoization ? [ fetcher ] : [],
+    skipFnMemoization ? [fetcher] : [],
   );
 
   const refetch = useCallback((...args: TArgs) => {
@@ -147,7 +148,7 @@ export function useResource<T, TArgs extends readonly any[]>(
     if (!controller.current) {
       controller.current = new AbortController();
     }
-  }, [ skipFirstRun ]);
+  }, [skipFirstRun]);
 
   useEffect(() => {
     if (skipFirst.current) {
@@ -165,9 +166,9 @@ export function useResource<T, TArgs extends readonly any[]>(
     };
     // onCompleted and onError are intentionally ommited, as we don't want to
     // retrigger the fetching, if someone forgot to memoize it
-  }, [ ...deps, skip, fetcherFn ]);
+  }, [...deps, skip, fetcherFn]);
 
-  return [ resource, { mutate, refetch, abort } ];
+  return [resource, { mutate, refetch, abort }];
 }
 
 function isAbortError(e: any): e is { name: "AbortError" } {
