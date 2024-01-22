@@ -2,17 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unpublished
+## Unreleased
 ### Added
 - additional typescript checks if useResource value is a function type, so it's
   impossible to accidently miss the external function wrapper during initialization
+- `<Match />` narrows down renderProp type to non-nullable values
 ### Changed
+- `<Await />` now renders nothing instead of throwing an error, if nullish `for` prop was supplied
 - exports declaration was changed for better cjs/mjs support
 - stricter internal dispatch checkings in useResource
-- Documentation and changelog typos, wordings and better examples
+- documentation and changelog typos, wordings and better examples
 
 ## [0.2.3] - 2023-02-20
 ### Changed

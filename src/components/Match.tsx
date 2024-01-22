@@ -5,7 +5,7 @@ interface MatchProps<T> {
   /** predicate */
   when: T | undefined | null | false;
   /** content (or renderProp) to display if predicate is truthy */
-  children?: ((item: T) => ReactNode) | ReactNode;
+  children?: ReactNode | ((item: NonNullable<T>) => ReactNode);
 }
 
 /** Single branch of Switch component. */

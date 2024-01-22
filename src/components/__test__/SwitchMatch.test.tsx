@@ -49,4 +49,15 @@ describe("Switch/Match component", () => {
     ));
     expect(screen.queryAllByText("test1").length).toBe(0);
   });
+
+  it("Match's renderProps are non-nullable", () => {
+    function test(arg: undefined) { arg }
+    render((
+      <Match when={"test" as string | undefined}>
+        {/*@ts-expect-error undefined should be filtered out*/}
+        {test}
+      </Match>
+    ));
+    expect(screen.queryAllByText("test").length).toBe(0);
+  });
 });

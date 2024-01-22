@@ -1,8 +1,10 @@
+import React from "react";
 import { describe, it, expect } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { render, screen, renderHook, act } from "@testing-library/react";
 
 import { useResourceReducer } from "../useResourceReducer";
 import { NullishError } from "../../models/NullishError";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 
 describe("useResourceReducer", () => {
   it("returns the initial state", () => {
@@ -106,18 +108,18 @@ describe("useResourceReducer", () => {
   });
 
   it("throws an error on wrong dispatch types", async () => {
-    const { result } = renderHook(() => useResourceReducer<boolean>(true));
-    const [, dispatch] = result.current;
-
-    try {
-      await act(() => {
-        //@ts-expect-error bad dispatch
-        dispatch({ type: "FAKE", payload: true });
-      });
-      throw new Error("unreachable");
-    } catch (e) {
-      expect(e).toBeInstanceOf(Error);
-      expect((e as Error).message).toBe("Invalid action type");
-    }
+    const CustomTestComponent = () => {
+      const [, dispatch] = useResourceReducer<boolean>(true);
+      //@ts-expect-error bad dispatch
+      dispatch({ type: "FAKE", payload: true });
+      return <div />;
+    };
+    render((
+      <ErrorBoundary fallback={err => err?.toString()}>
+        <CustomTestComponent />
+      </ErrorBoundary>
+    ));
+    screen.debug();
+    expect(screen.queryAllByText("Error: Invalid action type").length).toBe(1);
   });
 });

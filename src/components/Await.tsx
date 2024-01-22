@@ -15,6 +15,9 @@ interface AwaitProps<T> {
 
 /** Component for displaying a Resource */
 export function Await<T>(props: AwaitProps<T>): ReactElement | null {
+  if (props.for == null) {
+    return null;
+  }
   if (props.for.loading) {
     return renderProp(props.fallback);
   }

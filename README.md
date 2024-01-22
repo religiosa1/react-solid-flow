@@ -91,7 +91,7 @@ function Switch(props: {
 
 function Match<T>(props: {
   when: T | undefined | null | false;
-  children?: ReactNode | ((item: T) => ReactNode);
+  children?: ReactNode | ((item: NonNullable<T>) => ReactNode);
 }): ReactElement | null;
 ```
 

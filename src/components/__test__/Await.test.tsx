@@ -83,4 +83,20 @@ describe("Await", () => {
     expect(screen.queryByText("test")).toBeNull();
     expect(screen.queryByText("123")).toBeDefined();
   });
+
+  it("renders nothing if `for` isn't passed", () => {
+    render((
+      <Await
+        //@ts-expect-error nullish values should be reported as error
+        for={null}
+        catch={<i>test</i>}
+        fallback={<i>loading</i>}
+      >
+        Hi mom!
+      </Await>
+    ));
+    expect(screen.queryByText("loading")).toBeNull();
+    expect(screen.queryByText("test")).toBeNull();
+    expect(screen.queryByText("Hi mom!")).toBeNull();
+  });
 });
