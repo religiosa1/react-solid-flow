@@ -41,9 +41,9 @@ describe("For component", () => {
 
   it("wraps non-keyed elements with a keyed fragment", () => {
     const mockData = [
-      {id: "a", name: "test1"},
-      {id: "b", name: "test2"},
-      { name: "test3"},
+      { id: "a", name: "test1" },
+      { id: "b", name: "test2" },
+      { name: "test3" },
     ];
 
     render((
@@ -68,7 +68,7 @@ describe("For component", () => {
     render((
       <>
         <For each={[1, 2, 3]} fallback={<i>hi mom</i>}>
-          {() => null }
+          {() => null}
         </For>
         <For each={[1, 2, 3]} fallback={<i>hi mom</i>}>
           {null}

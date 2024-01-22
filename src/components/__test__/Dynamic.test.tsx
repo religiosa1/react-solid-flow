@@ -17,13 +17,13 @@ describe("Dynamic component", () => {
   });
 
   it("renders supplied components", () => {
-    const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>;
+    const Comp = ({ cont }: { cont: string }) => <span>{cont}</span>;
     render(<Dynamic component={Comp} cont="test" />);
     expect(screen.getByText("test")).toBeDefined();
   });
 
   it("correctly gets possible proptypes", () => {
-    const Comp = ({ cont }: {cont: string}) => <span>{cont}</span>;
+    const Comp = ({ cont }: { cont: string }) => <span>{cont}</span>;
     //@ts-expect-error wrong prop name "comt" instead of "cont"
     render(<Dynamic component={Comp} comt="test" />);
   });

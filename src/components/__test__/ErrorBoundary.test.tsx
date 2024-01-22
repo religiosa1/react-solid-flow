@@ -5,7 +5,7 @@ import { useRef, ReactNode } from "react";
 import { ErrorBoundary } from "../ErrorBoundary";
 
 describe("ErrorBoundary component", () => {
-  const Thrower = ({ skipAt = Infinity, children } : { skipAt?: number, children?: ReactNode }) => {
+  const Thrower = ({ skipAt = Infinity, children }: { skipAt?: number, children?: ReactNode }) => {
     const render = useRef(0);
     render.current++;
     if (render.current >= skipAt) {

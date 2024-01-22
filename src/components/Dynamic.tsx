@@ -1,5 +1,5 @@
 import React, { forwardRef } from "react";
-import type { ComponentType, ReactElement, Ref, RefAttributes} from "react";
+import type { ComponentType, ReactElement, Ref, RefAttributes } from "react";
 
 /* eslint-disable @typescript-eslint/ban-types */
 // as React types use {} we also use that.
