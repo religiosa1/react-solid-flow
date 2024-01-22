@@ -47,11 +47,19 @@ const Foo = () => {
 ### Deps, refetch on change (using Axios libary)
 
 ```tsx
-import axios from 'axios';
+import axios, { isCancel } from 'axios';
 
 const Foo = ({ id }: { id: number }) => {
   const [ resource ] = useResource(
-    (id, { signal }) => axios.get(`/api/v1/employees/${encodeUriComponent(id)}`, { signal }),
+    (id, { signal }) => axios.get(`/api/v1/employees/${encodeUriComponent(id)}`, undefined, { signal })
+      .catch((e: unknown) => {
+        // Notice, that axios CancelError is not the same as AbortError, so we need to catch and rethrow
+        // it, to avoid error flickering.
+        if (isCancel(e)) {
+          throw { name: "AbortError" };
+        }
+        throw e;
+      }),
     [id]
   );
   return "...";
@@ -93,6 +101,7 @@ const Foo = ({ externalSignal }: { externalSignal: AbortSignal }) => {
       externalSignal?.addEventListener("abort", abort);
       return () => externalSignal?.removeEventListener("abort", abort);
     },
+    // `abort` is memoized, you can safely omit it from deps. Or you can add it, whatever
     [externalSignal]
   );
   // ...

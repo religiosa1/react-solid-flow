@@ -8,7 +8,7 @@ It fulfills everyday needs: iteration, conditional
 display, Portals, ErrorBoundaries, fetching and displaying async data, etc.
 
 - Native Typescript support
-- Lightweight: (5kb minified UMD, 2.5kb gzip), tree-shakable,
+- Lightweight: (5kb minified, 2.5kb gzip), tree-shakable,
 - Zero third-party dependencies, except React and React-DOM
 - Modern: React 16.8+ .. 18.x, no legacy APIs or weird hacks
 - Fully tested
@@ -17,6 +17,7 @@ display, Portals, ErrorBoundaries, fetching and displaying async data, etc.
   mutations, race conditions, and more
 - Mostly SolidJS compatible interface (where it makes sense in the React context)
 - Covers common pitfalls (missed keys in maps, primitives as children, etc.)
+- Made to be effective in React 16 and 17 and compatible with older webpack setups
 - ⚡⚡💩💩 bLaZinGly FaSt 💩💩⚡⚡
 
 ## Installation
@@ -47,14 +48,14 @@ import { For } from "react-solid-flow";
 </For>
 ```
 
-Rendering a collection of items from the _each_ prop.
+Rendering a collection of items from the `each` prop.
 
-The _children_ prop can be either a render prop function (more useful)
+The `children` prop can be either a render prop function (more useful)
 or a static element.
 
-If _each_ isn't an array or has zero length, display the optional _fallback_.
+If `each` isn't an array or has zero length, display the optional `fallback`.
 
-Any nullish child is omitted. If every child is omitted, the _fallback_ prop is shown.
+Any nullish child is omitted. If every child is omitted, the `fallback` prop is shown.
 
 You can specify a key prop directly on the root element of a child, using
 item's data. If the key isn't specified or is falsy, then array index added as the
@@ -77,8 +78,8 @@ import { Show } from "react-solid-flow";
   <h2>Hi mom!</h2>
 </Show>
 ```
-Conditionally renders, depending on truthiness of the _when_ prop, either the
-_children_ prop or (optionally) the _fallback_ prop.
+Conditionally renders, depending on truthiness of the `when` prop, either the
+`children` prop or (optionally) the `fallback` prop.
 
 #### Switch / Match
 
@@ -108,12 +109,12 @@ import { Switch, Match } from "react-solid-flow";
 ```
 
 Akin to switch-case, it renders one of the mutually exclusive conditions
-(described in the _when_ prop of the Match component) of a switch.
+(described in the `when` prop of the Match component) of a switch.
 
-The _Match_ component should be a direct descendant of the _Switch_ component,
-and only the first _Match_ with a truthy _when_ prop will be rendered.
+The `Match` component should be a direct descendant of the `Switch` component,
+and only the first `Match` with a truthy `when` prop will be rendered.
 
-If no _Match_ component has a truthy _when_ prop, the optional _fallback_ prop
+If no `Match` component has a truthy `when` prop, the optional `fallback` prop
 will be shown.
 
 #### ErrorBoundary
@@ -144,11 +145,11 @@ import { ErrorBoundary } from "react-solid-flow";
 General error boundary that catches synchronous errors in renders and displays
 the fallback content.
 
-The _fallback_ prop can be a static element or a render prop function, which
-receives the occurred error and the _reset_ callback as its arguments.
+The `fallback` prop can be a static element or a render prop function, which
+receives the occurred error and the `reset` callback as its arguments.
 
-A call to the _reset_ function clears the occurred error and performs a
-re-render of _children_ after that.
+A call to the `reset` function clears the occurred error and performs a
+re-render of `children` after that.
 
 #### Await
 
@@ -168,7 +169,7 @@ function Await<T>(props: {
 ```
 
 A component for displaying resource-like async data. It can be used with a
-resource returned by the _useResource_ hook in this library, or any other
+resource returned by the `useResource` hook in this library, or any other
 object that conforms to the required interface (such as responses from
 the Apollo Client).
 
@@ -206,7 +207,7 @@ import { Dynamic } from "react-solid-flow";
 ```
 
 This component allows you to insert an arbitrary component or tag and pass props
-to it (excluding the _component_ prop).
+to it (excluding the `component` prop).
 
 Props are controlled by Typescript for Components, but not JSX intrinsic
 elements (such as "span", "div", etc.).
@@ -232,15 +233,15 @@ import { Portal } from "react-solid-flow";
   </dialog>
 </Portal>
 ```
-This component renders _children_ outside of the component hierarchy's root node.
+This component renders `children` outside of the component hierarchy's root node.
 React events will still function as usual.
 
-The _mount_ prop can be either a native node or a query selector for such a node.
+The `mount` prop can be either a native node or a query selector for such a node.
 
 If no node is provided, the component will render nothing.
 
 Plase notice, it requires react-dom as its depenndency.
-<!-- _useShadow_ places the element in Shadow Root for style isolation -->
+<!-- `useShadow` places the element in Shadow Root for style isolation -->
 
 ### Hooks
 
@@ -343,10 +344,7 @@ as the last argument.
 
 If the dependencies array is omitted, the fetcher is called only on mount.
 
-The `state` field represents the current resource state:
-2 / 2
-
-The `state` field represents the current state of the resource.
+The `state` field represents the current state of the resource:
 
 | state      | data  | loading | error |
 |:-----------|:-----:|:-------:|:-----:|
@@ -400,18 +398,18 @@ The resource will not be refetched until the dependencies change again.
 
 ##### useResourceOptions
 
-The _useResource_ hook accepts several options to customize its behavior:
+The `useResource` hook accepts several options to customize its behavior:
 
 - **`initial value`**:
   The value (or a sync function resolving to this value), to be used as the
   resource initial value. If an initial value is passed, it sets the initial
-  state to either "ready" or "refreshing" (depending on whether _skip_ or
-  _skipFirstRun_ opts are true or not.)
+  state to either "ready" or "refreshing" (depending on whether `skip` or
+  `skipFirstRun` opts are true or not.)
 - **`onCompleted`** and **`onError`**:
   Callbacks that are called when the resource resolves or rejects respectively.
 - **`skip`**:
   If set to true, it skips calls to the fetcher function, but it can still be
-  called manually with the _refresh_ function. This can be useful if you want
+  called manually with the `refresh` function. This can be useful if you want
   to wait for certain dependencies to be in a certain state before calling
   the fetcher or if you want to trigger the fetcher only manually on some event.
 - **`skipFirstRun`**:
@@ -422,9 +420,9 @@ The _useResource_ hook accepts several options to customize its behavior:
   will result in calls to it (the same way as if the dependencies array was
   changed).
 
-To avoid flickering of content, the resource initial state depends on the _skip_
-and _skipFirstRun_ options. If any of them is true, the resource state will be
-"unresolved" or "ready" depending on whether the _initialValue_ is defined.
+To avoid flickering of content, the resource initial state depends on the `skip`
+and `skipFirstRun` options. If any of them is true, the resource state will be
+"unresolved" or "ready" depending on whether the `initialValue` is defined.
 If both of them are false, the resource state will be "pending" or "refreshing"
 correspondingly, so we can correctly show a preloader right away.
 
@@ -438,7 +436,7 @@ from React itself, so it feels like reinventing the wheel.
 If you really want to use suspended data fetches, there are some 3d party libs
 for that, if you want a recomendation, there's [suspend-react](https://github.com/pmndrs/suspend-react)
 
-Check out useResource-examples.md to see different forms of it in action.
+Check out [useResource examples](./useResource-examples.md) to see different forms of it in action.
 
 ## Contributing
 If you have any ideas or suggestions or want to report a bug, feel free to
