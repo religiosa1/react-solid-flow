@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [1.0.0] - 2024-01-23
 ### Added
 - additional typescript checks if useResource value is a function type, so it's
   impossible to accidently miss the external function wrapper during initialization

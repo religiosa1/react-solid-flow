@@ -9,8 +9,7 @@
     "prepack": "npm run lint && npm run test && npm run build"
   },
   "type": "module",
-  "main": "./dist/lib.cjs",
-  "es2015": "./dist/lib.js",
+  "main": "./dist/lib.js",
   "types": "./dist/lib.d.ts",
   "exports": {
     ".": {
